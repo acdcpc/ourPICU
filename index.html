@@ -1,0 +1,321 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title></title>
+  <meta name="Generator" content="Cocoa HTML Writer">
+  <meta name="CocoaVersion" content="2685.6">
+  <style type="text/css">
+    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica}
+    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; min-height: 14.0px}
+  </style>
+</head>
+<body>
+<p class="p1">&lt;!DOCTYPE html&gt;</p>
+<p class="p1">&lt;html lang="en"&gt;</p>
+<p class="p1">&lt;head&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;meta charset="UTF-8"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;title&gt;OurPICU - Dr. Prakash Thapa&lt;/title&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"&gt;&lt;/script&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"&gt;&lt;/script&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"&gt;&lt;/script&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"&gt;&lt;/script&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"&gt;&lt;/script&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;style&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>:root {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>--primary: #1B3A5C;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>--secondary: #2E6DA4;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>--accent: #0F6E56;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>--success: #3B6D11;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>--warning: #BA7517;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>--danger: #A32D2D;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>* { margin:0; padding:0; box-sizing:border-box; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>body { font-family: system-ui, -apple-system, sans-serif; background:#F8F9FA; color:#333; line-height:1.6; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>header { background:var(--primary); color:white; padding:1rem; box-shadow:0 4px 12px rgba(0,0,0,0.1); }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.nav { display:flex; justify-content:space-between; align-items:center; max-width:1200px; margin:auto; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.logo { font-size:1.8rem; font-weight:bold; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.main-nav { display:flex; gap:1.2rem; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.nav-link { color:white; text-decoration:none; padding:0.7rem 1.2rem; border-radius:8px; transition:0.3s; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.nav-link:hover, .nav-link.active { background:var(--secondary); }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.container { max-width:1200px; margin:1.5rem auto; padding:0 1rem; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.section { display:none; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.section.active { display:block; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.card { background:white; border-radius:12px; box-shadow:0 4px 20px rgba(0,0,0,0.08); padding:1.8rem; margin-bottom:1.5rem; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>button { background:var(--secondary); color:white; border:none; padding:0.9rem 1.6rem; border-radius:8px; cursor:pointer; font-weight:500; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.btn-danger { background:var(--danger); }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.btn-success { background:var(--success); }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:1.5rem; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.bed-card { border:3px solid var(--primary); border-radius:12px; padding:1.5rem; text-align:center; cursor:pointer; transition:0.3s; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.bed-card:hover { transform:scale(1.04); box-shadow:0 8px 25px rgba(0,0,0,0.15); }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>input, select, textarea { width:100%; padding:12px; margin:8px 0; border:1px solid #ccc; border-radius:8px; font-size:1rem; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.bottom-nav { display:none; position:fixed; bottom:0; left:0; right:0; background:white; box-shadow:0 -3px 15px rgba(0,0,0,0.1); padding:0.6rem 0; justify-content:space-around; z-index:1000; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>@media (max-width: 768px) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>.bottom-nav { display:flex; }</p>
+<p class="p1"><span class="Apple-converted-space">            </span>.main-nav { display:none; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.footer { text-align:center; padding:1.5rem; color:#666; font-size:0.9rem; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.alert { padding:1rem; border-radius:8px; margin:1rem 0; font-weight:bold; }</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/style&gt;</p>
+<p class="p1">&lt;/head&gt;</p>
+<p class="p1">&lt;body&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;header&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div class="nav container"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div class="logo"&gt;OurPICU&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div class="main-nav" id="public-nav"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;a href="#" class="nav-link active" onclick="showSection('landing')"&gt;🏠 Home&lt;/a&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;a href="#" class="nav-link" onclick="showSection('education')"&gt;🎓 Education&lt;/a&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;a href="#" class="nav-link" onclick="showSection('about')"&gt;ℹ️ About&lt;/a&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div class="main-nav" id="private-nav" style="display:none;"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;a href="#" class="nav-link" onclick="showSection('dashboard')"&gt;👶 Dashboard&lt;/a&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;a href="#" class="nav-link" onclick="showSection('calculators')"&gt;🧮 Calculators&lt;/a&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;a href="#" class="nav-link" onclick="showSection('export')"&gt;📤 Export&lt;/a&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;a href="#" class="nav-link" onclick="showSection('admin')"&gt;⚙️ Admin&lt;/a&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;button onclick="toggleAuth()" id="auth-btn"&gt;🔐 Login&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/header&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="container"&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;!-- ==================== PUBLIC SECTIONS ==================== --&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div id="landing" class="section active"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div class="card" style="text-align:center; padding:5rem 2rem;"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;h1 style="color:var(--primary); font-size:3.2rem;"&gt;OurPICU&lt;/h1&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;h2&gt;Pediatric Intensive Care Unit&lt;/h2&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;p style="font-size:1.5rem; margin:2rem 0;"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>Dr. Prakash Thapa&lt;br&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;strong&gt;Pediatric Intensivist&lt;/strong&gt;&lt;br&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>Patan Academy of Health Sciences, Nepal</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;button onclick="showSection('education')" style="font-size:1.3rem; padding:1.2rem 3rem;"&gt;Enter Education Hub →&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div id="education" class="section"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;h2&gt;🎓 Education Hub&lt;/h2&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div class="grid" id="education-grid"&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div id="about" class="section"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div class="card"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;h2&gt;About&lt;/h2&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;p&gt;This application supports clinical workflow and medical education in the PICU of Patan Academy of Health Sciences.&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;!-- ==================== PRIVATE SECTIONS ==================== --&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div id="dashboard" class="section"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;h2&gt;PICU Dashboard&lt;/h2&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;button onclick="addNewPatient()" style="margin-bottom:1rem;"&gt;+ Add New Patient&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div class="grid" id="beds-grid"&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div id="calculators" class="section"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;h2&gt;🧮 Clinical Calculators&lt;/h2&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div class="grid"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div class="card" onclick="openCalculator(0)"&gt;Fluid Balance &amp; ISL&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div class="card" onclick="openCalculator(1)"&gt;Drug Dose Calculator&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div class="card" onclick="openCalculator(6)"&gt;PALS Resuscitation&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div id="calc-content" class="card" style="display:none;"&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div id="export" class="section"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;h2&gt;📤 Export Centre&lt;/h2&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;button onclick="exportToExcel()"&gt;Export All Patients to Excel&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div id="admin" class="section"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;h2&gt;⚙️ Admin Panel&lt;/h2&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;p&gt;Full admin features will be enabled after connecting your Firebase project.&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;button onclick="logout()" class="btn-danger"&gt;Logout&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;!-- Login Modal --&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div id="login-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:2000; align-items:center; justify-content:center;"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div class="card" style="max-width:400px; width:90%;"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;h3&gt;PICU Secure Login&lt;/h3&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;input type="email" id="email" placeholder="Email" style="margin-bottom:10px;"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;input type="password" id="password" placeholder="Password"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;button onclick="performLogin()" style="width:100%; margin:15px 0 8px;"&gt;Login&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;button onclick="closeLogin()" class="btn-danger" style="width:100%;"&gt;Cancel&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="bottom-nav"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;button onclick="showSection('dashboard')"&gt;👶&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;button onclick="showSection('calculators')"&gt;🧮&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;button onclick="showSection('export')"&gt;📤&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;button onclick="showSection('admin')"&gt;⚙️&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="footer"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>OurPICU v1.0 • Dr. Prakash Thapa • Patan Academy of Health Sciences, Nepal</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;script&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>// ==================== FIREBASE CONFIG ====================</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const firebaseConfig = {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>apiKey: "YOUR_API_KEY_HERE",</p>
+<p class="p1"><span class="Apple-converted-space">            </span>authDomain: "your-project.firebaseapp.com",</p>
+<p class="p1"><span class="Apple-converted-space">            </span>projectId: "your-project-id",</p>
+<p class="p1"><span class="Apple-converted-space">            </span>storageBucket: "your-project.appspot.com",</p>
+<p class="p1"><span class="Apple-converted-space">            </span>messagingSenderId: "123456789",</p>
+<p class="p1"><span class="Apple-converted-space">            </span>appId: "YOUR_APP_ID"</p>
+<p class="p1"><span class="Apple-converted-space">        </span>};</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>let auth, db;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>let currentUser = null;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>let patients = [];</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>function initFirebase() {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>if (typeof firebase !== "undefined") {</p>
+<p class="p1"><span class="Apple-converted-space">                </span>firebase.initializeApp(firebaseConfig);</p>
+<p class="p1"><span class="Apple-converted-space">                </span>auth = firebase.auth();</p>
+<p class="p1"><span class="Apple-converted-space">                </span>db = firebase.firestore();</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">                </span>auth.onAuthStateChanged(user =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>currentUser = user;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>document.getElementById('public-nav').style.display = user ? 'none' : 'flex';</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>document.getElementById('private-nav').style.display = user ? 'flex' : 'none';</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>document.getElementById('auth-btn').textContent = user ? '🚪 Logout' : '🔐 Login';</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>if (user) loadDemoPatients();</p>
+<p class="p1"><span class="Apple-converted-space">                </span>});</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>function toggleAuth() {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>currentUser ? logout() : document.getElementById('login-modal').style.display = 'flex';</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>function closeLogin() { document.getElementById('login-modal').style.display = 'none'; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>async function performLogin() {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>try {</p>
+<p class="p1"><span class="Apple-converted-space">                </span>await auth.signInWithEmailAndPassword(document.getElementById('email').value, document.getElementById('password').value);</p>
+<p class="p1"><span class="Apple-converted-space">                </span>closeLogin();</p>
+<p class="p1"><span class="Apple-converted-space">            </span>} catch (e) { alert("Login failed: " + e.message); }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>function logout() { auth.signOut(); }</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>function showSection(id) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>document.querySelectorAll('.section').forEach(s =&gt; s.classList.remove('active'));</p>
+<p class="p1"><span class="Apple-converted-space">            </span>document.getElementById(id).classList.add('active');</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>// ==================== DASHBOARD ====================</p>
+<p class="p1"><span class="Apple-converted-space">        </span>function loadDemoPatients() {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>patients = [</p>
+<p class="p1"><span class="Apple-converted-space">                </span>{id:1, bed:"01", age:4, weight:16, diagnosis:"Septic Shock"},</p>
+<p class="p1"><span class="Apple-converted-space">                </span>{id:2, bed:"02", age:0.8, weight:8, diagnosis:"Severe Pneumonia"}</p>
+<p class="p1"><span class="Apple-converted-space">            </span>];</p>
+<p class="p1"><span class="Apple-converted-space">            </span>renderBeds();</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>function renderBeds() {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const html = patients.map(p =&gt; `</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div class="bed-card" onclick="viewPatient(${p.id})"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;h3&gt;Bed ${p.bed}&lt;/h3&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;p&gt;${p.age} yr • ${p.weight} kg&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;p&gt;${p.diagnosis}&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>`).join('');</p>
+<p class="p1"><span class="Apple-converted-space">            </span>document.getElementById('beds-grid').innerHTML = html;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>function addNewPatient() {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const bed = prompt("Enter Bed Number:");</p>
+<p class="p1"><span class="Apple-converted-space">            </span>if (bed) {</p>
+<p class="p1"><span class="Apple-converted-space">                </span>patients.push({id: Date.now(), bed: bed, age: 5, weight: 18, diagnosis: "New Admission"});</p>
+<p class="p1"><span class="Apple-converted-space">                </span>renderBeds();</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>function viewPatient(id) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>alert("Patient details opened (Full patient module ready for expansion)");</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>// ==================== CALCULATORS ====================</p>
+<p class="p1"><span class="Apple-converted-space">        </span>function openCalculator(n) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const panel = document.getElementById('calc-content');</p>
+<p class="p1"><span class="Apple-converted-space">            </span>panel.style.display = 'block';</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>if (n === 0) {</p>
+<p class="p1"><span class="Apple-converted-space">                </span>panel.innerHTML = `</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;h3&gt;Fluid Balance &amp; ISL Calculator&lt;/h3&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;input type="number" id="weight" placeholder="Weight (kg)" value="15"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;input type="number" id="temp" placeholder="Temperature (°C)" value="37.5" step="0.1"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;button onclick="calculateFluid()" style="width:100%; margin-top:10px;"&gt;Calculate&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;div id="fluid-result"&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>`;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>} else if (n === 1) {</p>
+<p class="p1"><span class="Apple-converted-space">                </span>panel.innerHTML = `&lt;h3&gt;Drug Dose Calculator&lt;/h3&gt;&lt;p&gt;Select drug and enter weight. Full list ready in Admin panel.&lt;/p&gt;`;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>} else if (n === 6) {</p>
+<p class="p1"><span class="Apple-converted-space">                </span>panel.innerHTML = `</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;h3&gt;PALS Resuscitation Calculator&lt;/h3&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;input type="number" id="pals-weight" placeholder="Weight (kg)" value="12"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;button onclick="calculatePALS()" style="width:100%; margin-top:10px;"&gt;Calculate All Doses&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;div id="pals-result"&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>`;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>function calculateFluid() {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const w = parseFloat(document.getElementById('weight').value);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const temp = parseFloat(document.getElementById('temp').value);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>let isl = w &lt; 10 ? 40 : w &lt; 20 ? 30 : 20;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const fever = Math.max(0, temp - 37) * 12;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const adjusted = Math.round(isl * (1 + fever/100));</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const resultDiv = document.getElementById('fluid-result');</p>
+<p class="p1"><span class="Apple-converted-space">            </span>resultDiv.innerHTML = `&lt;div class="alert" style="background:#d4edda;"&gt;ISL: &lt;strong&gt;${adjusted} mL/kg/day&lt;/strong&gt;&lt;/div&gt;`;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>function calculatePALS() {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const w = parseFloat(document.getElementById('pals-weight').value);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const html = `</p>
+<p class="p1"><span class="Apple-converted-space">                </span>Adrenaline: ${(0.01 * w).toFixed(2)} mg&lt;br&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>Fluid Bolus: ${20 * w} mL&lt;br&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>ETT Size (cuffed): ${(w/4 + 3.5).toFixed(1)} mm&lt;br&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>Defibrillation: 2 J/kg → 4 J/kg</p>
+<p class="p1"><span class="Apple-converted-space">            </span>`;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>document.getElementById('pals-result').innerHTML = `&lt;div class="alert" style="background:#cce5ff;"&gt;${html}&lt;/div&gt;`;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>function exportToExcel() {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const wb = XLSX.utils.book_new();</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const ws = XLSX.utils.json_to_sheet(patients);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>XLSX.utils.book_append_sheet(wb, ws, "PICU_Patients");</p>
+<p class="p1"><span class="Apple-converted-space">            </span>XLSX.writeFile(wb, `OurPICU_Export_${new Date().toISOString().slice(0,10)}.xlsx`);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>// Education Content</p>
+<p class="p1"><span class="Apple-converted-space">        </span>function loadEducation() {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>document.getElementById('education-grid').innerHTML = `</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div class="card"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;h3&gt;YouTube Lecture&lt;/h3&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;iframe width="100%" height="220" src="https://www.youtube.com/embed/dQw4w9wgxcq" frameborder="0" allowfullscreen&gt;&lt;/iframe&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div class="card"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;h3&gt;Teaching Note&lt;/h3&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;p&gt;Fluid management in tropical climate (Nepal specific) - Updated 2026&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>`;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>// Initialize</p>
+<p class="p1"><span class="Apple-converted-space">        </span>window.onload = () =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>initFirebase();</p>
+<p class="p1"><span class="Apple-converted-space">            </span>loadEducation();</p>
+<p class="p1"><span class="Apple-converted-space">            </span>showSection('landing');</p>
+<p class="p1"><span class="Apple-converted-space">            </span>console.log("%cOurPICU v1.0 - Ready for Dr. Prakash Thapa", "color:#0F6E56; font-weight:bold; font-size:16px");</p>
+<p class="p1"><span class="Apple-converted-space">        </span>};</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/script&gt;</p>
+<p class="p1">&lt;/body&gt;</p>
+<p class="p1">&lt;/html&gt;</p>
+</body>
+</html>
