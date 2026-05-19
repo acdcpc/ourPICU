@@ -1,0 +1,1502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OurPICU - PICU Management System</title>
+    <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore-     compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-storage-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.min.js"></script>
+    <style>
+        :root { --primary: #1B3A5C; --secondary: #2E6DA4; --accent: #0F6E56; --bg: #F8F9FA; --success: #3B6D11; --warning: #BA7517; --danger: #A32D2D; --white: #FFFFFF; --text: #333333; --border: #DCDFE4; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: var(--bg); color: var(--text); line-height: 1.6; }
+        .container { display: flex; height: 100vh; overflow: hidden; }
+        .sidebar { width: 280px; background-color: var(--primary); color: var(--white); overflow-y: auto; padding: 20px; display: flex; flex-direction: column; }
+        .sidebar-header { margin-bottom: 30px; padding-bottom: 15px; border-bottom: 2px solid rgba(255,255,255,0.2); }
+        .sidebar-logo { font-size: 24px; font-weight: bold; margin-bottom: 5px; }
+        .sidebar-tagline { font-size: 12px; opacity: 0.8; }
+        .sidebar-nav { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+        .nav-item { padding: 12px 15px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; border: none; background: none; color: var(--white); text-align: left; font-size: 14px; width: 100%; }
+        .nav-item:hover { background-color: rgba(255,255,255,0.1); transform: translateX(5px); }
+        .nav-item.active { background-color: var(--accent); font-weight: bold; }
+        .sidebar-footer { margin-top: 20px; padding-top: 15px; border-top: 2px solid rgba(255,255,255,0.2); font-size: 12px; opacity: 0.7; }
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .header { background-color: var(--white); border-bottom: 1px solid var(--border); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .header-title { font-size: 20px; font-weight: bold; color: var(--primary); }
+        .header-user { display: flex; align-items: center; gap: 15px; font-size: 14px; }
+        .content { flex: 1; overflow-y: auto; padding: 30px; }
+        .section { display: none; }
+        .section.active { display: block; }
+        .card { background-color: var(--white); border-radius: 10px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid var(--border); }
+        .card-header { font-size: 18px; font-weight: bold; margin-bottom: 15px; color: var(--primary); border-bottom: 2px solid var(--accent); padding-bottom: 10px; }
+        .form-group { margin-bottom: 15px; display: flex; flex-direction: column; }
+        .form-group label { font-weight: 600; margin-bottom: 5px; font-size: 14px; color: var(--primary); }
+        input[type="text"], input[type="email"], input[type="password"], input[type="number"], input[type="date"], input[type="url"], input[type="file"], select, textarea { padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; font-family: inherit; transition: border-color 0.3s ease; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--secondary); box-shadow: 0 0 0 3px rgba(46,109,164,0.1); }
+        textarea { min-height: 100px; resize: vertical; }
+        button { padding: 10px 20px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-family: inherit; }
+        .btn-primary { background-color: var(--primary); color: var(--white); }
+        .btn-primary:hover { background-color: #0d1f34; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(27,58,92,0.3); }
+        .btn-secondary { background-color: var(--secondary); color: var(--white); }
+        .btn-secondary:hover { background-color: #1f4a73; }
+        .btn-accent { background-color: var(--accent); color: var(--white); }
+        .btn-accent:hover { background-color: #0a4533; }
+        .btn-danger { background-color: var(--danger); color: var(--white); }
+        .btn-danger:hover { background-color: #7a1f1f; }
+        .btn-outline { border: 2px solid var(--primary); color: var(--primary); background-color: transparent; }
+        .btn-outline:hover { background-color: var(--primary); color: var(--white); }
+        .btn-small { padding: 6px 12px; font-size: 12px; }
+        .grid { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+        .grid-2 { grid-template-columns: repeat(2, 1fr); }
+        .alert { padding: 15px; border-radius: 6px; margin-bottom: 15px; border-left: 4px solid; }
+        .alert-success { background-color: #f0f8f0; border-color: var(--success); color: var(--success); }
+        .alert-warning { background-color: #fff9f0; border-color: var(--warning); color: var(--warning); }
+        .alert-danger { background-color: #f9f0f0; border-color: var(--danger); color: var(--danger); }
+        .alert-info { background-color: #f0f8ff; border-color: var(--secondary); color: var(--secondary); }
+        .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .badge-success { background-color: #e8f5e9; color: var(--success); }
+        .badge-warning { background-color: #fff3e0; color: var(--warning); }
+        .badge-danger { background-color: #ffebee; color: var(--danger); }
+        .badge-info { background-color: #e3f2fd; color: var(--secondary); }
+        .bed-grid { display: grid; gap: 15px; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); }
+        .bed-card { background-color: var(--white); border: 2px solid var(--border); border-radius: 8px; padding: 15px; cursor: pointer; transition: all 0.3s ease; }
+        .bed-card:hover { border-color: var(--secondary); box-shadow: 0 4px 12px rgba(46,109,164,0.2); transform: translateY(-2px); }
+        .bed-number { font-size: 24px; font-weight: bold; color: var(--primary); margin-bottom: 8px; }
+        .bed-info { font-size: 13px; color: #666; margin-bottom: 4px; }
+        .bed-status { font-size: 12px; font-weight: 600; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        table th { background-color: #f5f7fa; padding: 12px; text-align: left; font-weight: 600; color: var(--primary); border-bottom: 2px solid var(--border); font-size: 13px; }
+        table td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 14px; }
+        table tr:hover { background-color: #f9fafb; }
+        .tabs { display: flex; gap: 10px; border-bottom: 2px solid var(--border); margin-bottom: 20px; flex-wrap: wrap; }
+        .tab { padding: 10px 15px; background: none; border: none; border-bottom: 3px solid transparent; cursor: pointer; font-weight: 600; color: #666; transition: all 0.3s ease; font-size: 14px; }
+        .tab:hover { color: var(--primary); }
+        .tab.active { color: var(--primary); border-bottom-color: var(--accent); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+        .modal.active { display: flex; }
+        .modal-content { background-color: var(--white); border-radius: 10px; padding: 30px; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
+        .modal-header { font-size: 20px; font-weight: bold; margin-bottom: 20px; color: var(--primary); border-bottom: 2px solid var(--accent); padding-bottom: 10px; }
+        .modal-footer { margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end; }
+        .close-btn { position: absolute; top: 20px; right: 20px; background: none; border: none; font-size: 28px; cursor: pointer; color: var(--text); }
+        .result-box { background-color: #f9fafb; border: 2px solid var(--accent); border-radius: 8px; padding: 15px; margin-top: 15px; }
+        .result-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); }
+        .result-row:last-child { border-bottom: none; }
+        .result-label { font-weight: 600; color: var(--primary); }
+        .result-value { color: var(--accent); font-weight: bold; }
+        .login-container { display: flex; align-items: center; justify-content: center; height: 100vh; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); }
+        .login-card { background-color: var(--white); border-radius: 10px; padding: 40px; width: 100%; max-width: 400px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
+        .login-logo { text-align: center; font-size: 32px; font-weight: bold; color: var(--primary); margin-bottom: 10px; }
+        .login-subtitle { text-align: center; font-size: 14px; color: #666; margin-bottom: 30px; }
+        .hidden { display: none !important; }
+        .text-center { text-align: center; }
+        .flex { display: flex; }
+        .gap-10 { gap: 10px; }
+        .footer { text-align: center; font-size: 12px; color: #999; margin-top: 30px; padding-top: 15px; border-top: 1px solid var(--border); }
+        .mobile-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; background-color: var(--primary); border-top: 1px solid var(--border); padding: 10px 0; z-index: 100; }
+        .mobile-nav-items { display: flex; justify-content: space-around; align-items: center; }
+        .mobile-nav-item { flex: 1; text-align: center; padding: 10px 5px; color: var(--white); font-size: 12px; cursor: pointer; border: none; background: none; }
+        .mobile-nav-item.active { background-color: var(--accent); }
+        @media (max-width: 768px) {
+            .container { flex-direction: column; }
+            .sidebar { display: none; position: fixed; left: 0; top: 0; height: 100vh; width: 280px; z-index: 50; }
+            .main-content { padding-bottom: 60px; }
+            .mobile-nav { display: block; }
+            .content { padding: 15px; }
+            .header { padding: 15px; }
+            .grid { grid-template-columns: 1fr; }
+            .bed-grid { grid-template-columns: 1fr; }
+            .modal-content { max-width: 100%; margin: 20px; }
+        }
+        @media (max-width: 480px) {
+            .login-card { padding: 20px; margin: 20px; }
+            button { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="loginSection" class="section active">
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-logo">🏥</div>
+            <h1 style="text-align: center; margin-bottom: 10px; color: var(--primary);">OurPICU</h1>
+            <div class="login-subtitle">Pediatric Intensive Care Management</div>
+
+            <div id="loginForm">
+                <form onsubmit="handleLogin(event)">
+                    <div class="form-group"><label>Email</label><input type="email" id="loginEmail" required></div>
+                    <div class="form-group"><label>Password</label><input type="password" id="loginPassword" required></div>
+                    <div id="loginError" class="alert alert-danger hidden" style="margin-bottom: 15px;"></div>
+                    <button type="submit" class="btn-primary" style="width: 100%;">Sign In</button>
+                </form>
+                <div style="text-align: center; margin-top: 20px;"><button class="btn-outline" onclick="toggleSignUp()" style="width: 100%;">Create Account</button></div>
+            </div>
+
+            <div id="signupForm" class="hidden">
+                <form onsubmit="handleSignup(event)">
+                    <div class="form-group"><label>Email</label><input type="email" id="signupEmail" required></div>
+                    <div class="form-group"><label>Password (min 6 characters)</label><input type="password" id="signupPassword" required></div>
+                    <div class="form-group"><label>Confirm Password</label><input type="password" id="signupPasswordConfirm" required></div>
+                    <div id="signupError" class="alert alert-danger hidden" style="margin-bottom: 15px;"></div>
+                    <button type="submit" class="btn-primary" style="width: 100%;">Create Account</button>
+                </form>
+                <div style="text-align: center; margin-top: 20px;"><button class="btn-outline" onclick="toggleSignUp()" style="width: 100%;">Back to Sign In</button></div>
+            </div>
+
+            <div class="footer">OurPICU v1.0 | Patan Academy of Health Sciences, Nepal</div>
+        </div>
+    </div>
+</div>
+
+<div id="mainApp" class="section hidden">
+    <div class="container">
+        <div class="sidebar">
+            <div class="sidebar-header"><div class="sidebar-logo">🏥 OurPICU</div><div class="sidebar-tagline">PICU Management</div></div>
+            <div class="sidebar-nav">
+                <button class="nav-item active" onclick="showSection('dashboard')">🏠 Dashboard</button>
+                <button class="nav-item" onclick="showSection('education')">🎓 Education</button>
+                <button class="nav-item" onclick="showSection('patients')">👶 Patients</button>
+                <button class="nav-item" onclick="showSection('calculators')">🧮 Calculators</button>
+                <button class="nav-item" onclick="showSection('export')">📤 Export</button>
+                <button class="nav-item" onclick="showSection('admin')">⚙️ Admin</button>
+            </div>
+            <div class="sidebar-footer">
+                <div id="userEmail" style="margin-bottom: 10px;"></div>
+                <button class="nav-item" onclick="handleLogout()" style="background-color: rgba(255,255,255,0.1); color: var(--white); width: 100%; text-align: center;">🚪 Logout</button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="header">
+                <div class="header-title" id="pageTitle">Dashboard</div>
+                <div class="header-user"><span id="doctorName">Dr. Prakash Thapa</span></div>
+            </div>
+
+            <div class="content">
+                <!-- DASHBOARD -->
+                <div id="dashboard" class="section active">
+                    <div class="card"><div class="card-header">PICU Dashboard - Active Patients</div><div class="bed-grid" id="bedGrid"></div></div>
+                    <div class="card"><div class="card-header">Quick Actions</div><div class="grid"><button class="btn-primary" onclick="openAddPatientModal()">➕ Add Patient</button><button class="btn-secondary" onclick="showSection('calculators')">🧮 Calculators</button><button class="btn-accent" onclick="showSection('export')">📤 Export</button></div></div>
+                </div>
+
+                <!-- EDUCATION -->
+                <div id="education" class="section">
+                    <div class="card">
+                        <div class="card-header">📚 Education Hub</div>
+                        <div class="tabs"><button class="tab active" onclick="switchEducationTab('videos')">Videos</button><button class="tab" onclick="switchEducationTab('notes')">Notes</button><button class="tab" onclick="switchEducationTab('mcq')">MCQ</button></div>
+                        <div id="videosTab" class="tab-content active"><div class="grid" id="videosContainer"></div></div>
+                        <div id="notesTab" class="tab-content"><div id="teachingNotesContainer"></div></div>
+                        <div id="mcqTab" class="tab-content"><div id="mcqContainer"></div></div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">Follow Dr. Prakash Thapa</div>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <a href="#" id="youtubeLink" target="_blank" class="btn-secondary">▶️ YouTube</a>
+                            <a href="#" id="facebookLink" target="_blank" class="btn-secondary">👍 Facebook</a>
+                            <a href="#" id="twitterLink" target="_blank" class="btn-secondary">𝕏 Twitter</a>
+                            <a href="#" id="instagramLink" target="_blank" class="btn-secondary">📷 Instagram</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PATIENTS -->
+                <div id="patients" class="section">
+                    <div class="card">
+                        <div class="card-header">Patient Records</div>
+                        <button class="btn-primary" onclick="openAddPatientModal()" style="margin-bottom: 15px;">➕ Add Patient</button>
+                        <table><thead><tr><th>Bed</th><th>Age</th><th>Weight</th><th>Diagnosis</th><th>Admission</th><th>Actions</th></tr></thead><tbody id="patientsTableBody"></tbody></table>
+                    </div>
+                </div>
+
+                <!-- PATIENT DETAIL -->
+                <div id="patientDetail" class="section">
+                    <button class="btn-outline btn-small" onclick="showSection('patients')">← Back</button>
+                    <div class="card" style="margin-top: 15px;">
+                        <div class="card-header" id="patientDetailHeader">Patient Details</div>
+                        <div class="grid-2"><div><p><strong>Bed:</strong> <span id="detailBedNumber">-</span></p><p><strong>Age:</strong> <span id="detailAge">-</span></p><p><strong>Weight:</strong> <span id="detailWeight">-</span> kg</p></div><div><p><strong>Diagnosis:</strong> <span id="detailDiagnosis">-</span></p><p><strong>Admission:</strong> <span id="detailAdmission">-</span></p><p><strong>Status:</strong> <span id="detailStatus">-</span></p></div></div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">Patient Management</div>
+                        <div class="tabs">
+                            <button class="tab active" onclick="switchPatientTab('fluidBalance')">Fluid</button>
+                            <button class="tab" onclick="switchPatientTab('drugs')">Drugs</button>
+                            <button class="tab" onclick="switchPatientTab('investigations')">Labs</button>
+                            <button class="tab" onclick="switchPatientTab('images')">Images</button>
+                            <button class="tab" onclick="switchPatientTab('notes')">Notes</button>
+                        </div>
+
+                        <div id="fluidBalanceTab" class="tab-content active">
+                            <form onsubmit="addFluidBalance(event)">
+                                <div class="grid"><div class="form-group"><label>Date</label><input type="date" id="fbDate" required></div><div class="form-group"><label>Adm Weight (kg)</label><input type="number" id="fbAdmissionWeight" step="0.1" required></div></div>
+                                <div class="grid"><div class="form-group"><label>Current Weight</label><input type="number" id="fbCurrentWeight" step="0.1" required></div><div class="form-group"><label>Temperature</label><input type="number" id="fbTemperature" step="0.1" required></div></div>
+                                <div class="grid"><div class="form-group"><label>Ventilation</label><select id="fbVentilationType" required><option value="">Select</option><option value="none">Non-intubated</option><option value="hfnc">HFNC</option><option value="niv">NIV</option><option value="humidified">MV Humidified</option><option value="non-humidified">MV Non-humidified</option></select></div><div class="form-group"><label>CRRT?</label><select id="fbCRRT" required><option value="no">No</option><option value="yes">Yes</option></select></div></div>
+                                <div class="card" style="background-color: #f9fafb;"><strong>Inputs</strong><div id="fbInputsContainer" style="margin-top: 10px;"><div class="flex gap-10" style="margin-bottom: 10px;"><input type="text" placeholder="Type" class="fbInputType" style="flex: 1;"><input type="number" placeholder="mL" class="fbInputVolume" style="flex: 1;"><button type="button" class="btn-small btn-danger" onclick="removeFBInput(this)">Remove</button></div></div><button type="button" class="btn-small btn-secondary" onclick="addFBInput()">+ Input</button></div>
+                                <div class="card" style="background-color: #f9fafb; margin-top: 15px;"><strong>Outputs</strong><div class="form-group"><label>Urine</label><input type="number" id="fbUrine" placeholder="mL" value="0"></div><div id="fbDrainsContainer"><div class="flex gap-10" style="margin-bottom: 10px;"><input type="text" placeholder="Drain" class="fbDrainType" style="flex: 1;"><input type="number" placeholder="mL" class="fbDrainVolume" style="flex: 1;"><button type="button" class="btn-small btn-danger" onclick="removeFBDrain(this)">Remove</button></div></div><button type="button" class="btn-small btn-secondary" onclick="addFBDrain()">+ Drain</button></div>
+                                <button type="submit" class="btn-primary" style="width: 100%; margin-top: 15px;">Calculate</button>
+                            </form>
+                            <table id="fbTable" style="margin-top: 15px;"><thead><tr><th>Date</th><th>Input</th><th>Output</th><th>Balance</th><th>FO%</th><th>Status</th></tr></thead><tbody id="fbTableBody"></tbody></table>
+                        </div>
+
+                        <div id="drugsTab" class="tab-content">
+                            <form onsubmit="addDrug(event)">
+                                <div class="grid"><div class="form-group"><label>Drug</label><select id="drugName" required><option>Select</option></select></div><div class="form-group"><label>Start Date</label><input type="date" id="drugStartDate" required></div></div>
+                                <button type="submit" class="btn-primary">Add Drug</button>
+                            </form>
+                            <table id="drugTable" style="margin-top: 15px;"><thead><tr><th>Drug</th><th>Dose/kg</th><th>Max</th><th>Freq</th><th>Route</th><th>Start</th></tr></thead><tbody id="drugTableBody"></tbody></table>
+                        </div>
+
+                        <div id="investigationsTab" class="tab-content">
+                            <form onsubmit="addInvestigation(event)">
+                                <div class="form-group"><label>Date</label><input type="date" id="invDate" required></div>
+                                <div id="labTestsContainer"><div class="flex gap-10" style="margin-bottom: 10px;"><input type="text" placeholder="Test" class="labTestName" style="flex: 1;"><input type="number" placeholder="Value" step="0.01" class="labTestValue" style="flex: 1;"><button type="button" class="btn-small btn-danger" onclick="removeLabTest(this)">Remove</button></div></div>
+                                <button type="button" class="btn-small btn-secondary" onclick="addLabTest()" style="margin-bottom: 15px;">+ Test</button>
+                                <button type="submit" class="btn-primary" style="width: 100%;">Save</button>
+                            </form>
+                            <table id="invTable" style="margin-top: 15px;"><thead><tr><th>Date</th><th>Test</th><th>Value</th></tr></thead><tbody id="invTableBody"></tbody></table>
+                        </div>
+
+                        <div id="imagesTab" class="tab-content">
+                            <form onsubmit="uploadImage(event)">
+                                <div class="form-group"><label>Image (max 500KB)</label><input type="file" id="imageFile" accept="image/*" required></div>
+                                <div class="form-group"><label>Description</label><input type="text" id="imageDescription"></div>
+                                <div class="form-group"><label>Type</label><select id="imageType" required><option>Select</option><option value="USG">Ultrasound</option><option value="Xray">X-ray</option><option value="CT">CT</option><option value="Other">Other</option></select></div>
+                                <button type="submit" class="btn-primary" style="width: 100%;">Upload</button>
+                            </form>
+                            <div id="imagesContainer" style="margin-top: 15px;"></div>
+                        </div>
+
+                        <div id="notesTab" class="tab-content">
+                            <form onsubmit="addClinicalNote(event)">
+                                <div class="form-group"><label>Note</label><textarea id="noteText" required></textarea></div>
+                                <button type="submit" class="btn-primary" style="width: 100%;">Add Note</button>
+                            </form>
+                            <div id="notesContainer" style="margin-top: 15px;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CALCULATORS -->
+                <div id="calculators" class="section">
+                    <div class="tabs"><button class="tab active" onclick="switchCalculator('fluidBalance')">Fluid</button><button class="tab" onclick="switchCalculator('drugDose')">Drug</button><button class="tab" onclick="switchCalculator('ventilator')">Vent</button><button class="tab" onclick="switchCalculator('sepsis')">Sepsis</button><button class="tab" onclick="switchCalculator('rai')">RAI</button><button class="tab" onclick="switchCalculator('nutrition')">Nutrition</button><button class="tab" onclick="switchCalculator('pals')">PALS</button></div>
+
+                    <div id="calcFluidBalance" class="tab-content active card">
+                        <div class="card-header">Fluid Balance & ISL</div>
+                        <form onsubmit="calcFluidBalanceFunc(event)">
+                            <div class="grid"><div class="form-group"><label>Age (yr)</label><input type="number" id="cbAge" step="0.1" required></div><div class="form-group"><label>Weight (kg)</label><input type="number" id="cbWeight" step="0.1" required></div><div class="form-group"><label>Temp (°C)</label><input type="number" id="cbTemp" step="0.1" required></div><div class="form-group"><label>Ventilation</label><select id="cbVentilation" required><option value="none">None</option><option value="hfnc">HFNC</option><option value="niv">NIV</option><option value="humidified">Humidified</option><option value="nonhumidified">Non-humid</option></select></div><div class="form-group"><label>CRRT?</label><select id="cbCRRT" required><option value="no">No</option><option value="yes">Yes</option></select></div><div class="form-group"><label>Adm Wt (kg)</label><input type="number" id="cbAdmWeight" step="0.1"></div></div>
+                            <div class="grid"><div class="form-group"><label>Cum Input (mL)</label><input type="number" id="cbCumInput" placeholder="0"></div><div class="form-group"><label>Cum Output (mL)</label><input type="number" id="cbCumOutput" placeholder="0"></div></div>
+                            <button type="submit" class="btn-primary" style="width: 100%;">Calculate</button>
+                        </form>
+                        <div id="fbCalcResult"></div>
+                    </div>
+
+                    <div id="calcDrugDose" class="tab-content card">
+                        <div class="card-header">Drug Dose Calculator</div>
+                        <form onsubmit="calcDrugDoseFunc(event)">
+                            <div class="grid"><div class="form-group"><label>Weight (kg)</label><input type="number" id="ddWeight" step="0.1" required></div><div class="form-group"><label>Drug</label><select id="ddDrug" required><option>Select</option></select></div></div>
+                            <button type="submit" class="btn-primary" style="width: 100%;">Calculate</button>
+                        </form>
+                        <div id="ddResult"></div>
+                    </div>
+
+                    <div id="calcVentilator" class="tab-content card">
+                        <div class="card-header">Ventilator Settings</div>
+                        <form onsubmit="calcVentilatorFunc(event)">
+                            <div class="grid"><div class="form-group"><label>Age (yr)</label><input type="number" id="ventAge" step="0.1" required></div><div class="form-group"><label>Weight (kg)</label><input type="number" id="ventWeight" step="0.1" required></div></div>
+                            <button type="submit" class="btn-primary" style="width: 100%;">Calculate</button>
+                        </form>
+                        <div id="ventResult"></div>
+                    </div>
+
+                    <div id="calcSepsis" class="tab-content card">
+                        <div class="card-header">PELOD-2 Sepsis Score</div>
+                        <form onsubmit="calcSepsisFunc(event)">
+                            <div class="grid"><div class="form-group"><label>GCS</label><input type="number" id="gcs" min="3" max="15" required></div><div class="form-group"><label>PaO2/FiO2</label><input type="number" id="pf" required></div></div>
+                            <div class="grid"><div class="form-group"><label>PaCO2</label><input type="number" id="paco2" required></div><div class="form-group"><label>Lactate</label><input type="number" step="0.1" id="lactate" required></div></div>
+                            <div class="grid"><div class="form-group"><label>Platelets</label><input type="number" id="platelets" required></div><div class="form-group"><label>Creatinine</label><input type="number" step="0.1" id="creatinine" required></div></div>
+                            <button type="submit" class="btn-primary" style="width: 100%;">Calculate</button>
+                        </form>
+                        <div id="sepsisResult"></div>
+                    </div>
+
+                    <div id="calcRAI" class="tab-content card">
+                        <div class="card-header">Renal Angina Index</div>
+                        <form onsubmit="calcRAIFunc(event)">
+                            <div class="grid"><div class="form-group"><label>Risk Tier</label><select id="raiTier" required><option>Select</option><option value="1">Tier 1</option><option value="3">Tier 2</option><option value="5">Tier 3</option><option value="10">Tier 4</option></select></div><div class="form-group"><label>Fluid Overload (%)</label><input type="number" step="0.1" id="raiFluidOverload" required></div></div>
+                            <button type="submit" class="btn-primary" style="width: 100%;">Calculate</button>
+                        </form>
+                        <div id="raiResult"></div>
+                    </div>
+
+                    <div id="calcNutrition" class="tab-content card">
+                        <div class="card-header">Nutrition Calculator</div>
+                        <form onsubmit="calcNutritionFunc(event)">
+                            <div class="grid"><div class="form-group"><label>Age (yr)</label><input type="number" id="nutAge" step="0.1" required></div><div class="form-group"><label>Weight (kg)</label><input type="number" id="nutWeight" step="0.1" required></div></div>
+                            <div class="grid"><div class="form-group"><label>Route</label><select id="nutRoute" required><option>Select</option><option value="enteral">Enteral</option><option value="parenteral">Parenteral</option></select></div></div>
+                            <button type="submit" class="btn-primary" style="width: 100%;">Calculate</button>
+                        </form>
+                        <div id="nutResult"></div>
+                    </div>
+
+                    <div id="calcPALS" class="tab-content card">
+                        <div class="card-header">PALS Resuscitation</div>
+                        <form onsubmit="calcPALSFunc(event)">
+                            <div class="grid"><div class="form-group"><label>Weight (kg)</label><input type="number" id="palsWeight" step="0.1" required></div></div>
+                            <button type="submit" class="btn-primary" style="width: 100%;">Calculate</button>
+                        </form>
+                        <div id="palsResult"></div>
+                    </div>
+                </div>
+
+                <!-- EXPORT -->
+                <div id="export" class="section">
+                    <div class="card">
+                        <div class="card-header">📤 Export Centre</div>
+                        <div class="grid">
+                            <button class="btn-primary" onclick="exportAllData()">Export All</button>
+                            <button class="btn-secondary" onclick="exportPatientData()">Export Patient</button>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">Select Patient</div>
+                        <select id="exportPatientSelect"><option>All</option></select>
+                    </div>
+                </div>
+
+                <!-- ADMIN -->
+                <div id="admin" class="section">
+                    <div class="card">
+                        <div class="card-header">⚙️ Admin Panel</div>
+                        <div class="tabs">
+                            <button class="tab active" onclick="switchAdminTab('profile')">Profile</button>
+                            <button class="tab" onclick="switchAdminTab('picu')">PICU</button>
+                            <button class="tab" onclick="switchAdminTab('drugs')">Drugs</button>
+                            <button class="tab" onclick="switchAdminTab('videos')">Videos</button>
+                            <button class="tab" onclick="switchAdminTab('socialMedia')">Social</button>
+                            <button class="tab" onclick="switchAdminTab('teachingNotes')">Notes</button>
+                            <button class="tab" onclick="switchAdminTab('mcq')">MCQ</button>
+                        </div>
+
+                        <div id="adminProfile" class="tab-content active">
+                            <form onsubmit="saveAdminProfile(event)">
+                                <div class="form-group"><label>Doctor Name</label><input type="text" id="adminDoctorName" required></div>
+                                <div class="form-group"><label>Designation</label><input type="text" id="adminDesignation" required></div>
+                                <div class="form-group"><label>New Password</label><input type="password" id="adminNewPassword"></div>
+                                <button type="submit" class="btn-primary">Save</button>
+                            </form>
+                        </div>
+
+                        <div id="adminPICU" class="tab-content">
+                            <form onsubmit="saveAdminPICU(event)">
+                                <div class="form-group"><label>Hospital</label><input type="text" id="adminHospital" required></div>
+                                <div class="form-group"><label>Unit Name</label><input type="text" id="adminUnitName" required></div>
+                                <div class="form-group"><label>Beds</label><input type="number" id="adminBeds" required min="1"></div>
+                                <button type="submit" class="btn-primary">Save</button>
+                            </form>
+                        </div>
+
+                        <div id="adminDrugs" class="tab-content">
+                            <form onsubmit="addDrugToLibrary(event)">
+                                <div class="form-group"><label>Drug Name</label><input type="text" id="drugLibraryName" required></div>
+                                <div class="grid"><div class="form-group"><label>Dose/kg</label><input type="text" id="drugLibraryDose"></div><div class="form-group"><label>Max</label><input type="text" id="drugLibraryMax"></div></div>
+                                <div class="grid"><div class="form-group"><label>Frequency</label><input type="text" id="drugLibraryFreq"></div><div class="form-group"><label>Route</label><input type="text" id="drugLibraryRoute"></div></div>
+                                <button type="submit" class="btn-primary">Add</button>
+                            </form>
+                            <table style="margin-top: 15px;"><thead><tr><th>Drug</th><th>Action</th></tr></thead><tbody id="drugLibraryBody"></tbody></table>
+                        </div>
+
+                        <div id="adminVideos" class="tab-content">
+                            <form onsubmit="addEducationVideo(event)">
+                                <div class="form-group"><label>Title</label><input type="text" id="videoTitle" required></div>
+                                <div class="form-group"><label>YouTube ID</label><input type="text" id="youtubeId" required></div>
+                                <div class="form-group"><label>Description</label><textarea id="videoDescription"></textarea></div>
+                                <button type="submit" class="btn-primary">Add</button>
+                            </form>
+                            <table style="margin-top: 15px;"><thead><tr><th>Title</th><th>Action</th></tr></thead><tbody id="videoBody"></tbody></table>
+                        </div>
+
+                        <div id="adminSocialMedia" class="tab-content">
+                            <form onsubmit="saveSocialMedia(event)">
+                                <div class="form-group"><label>YouTube</label><input type="url" id="smYoutube"></div>
+                                <div class="form-group"><label>Facebook</label><input type="url" id="smFacebook"></div>
+                                <div class="form-group"><label>Twitter</label><input type="url" id="smTwitter"></div>
+                                <div class="form-group"><label>Instagram</label><input type="url" id="smInstagram"></div>
+                                <button type="submit" class="btn-primary">Save</button>
+                            </form>
+                        </div>
+
+                        <div id="adminTeachingNotes" class="tab-content">
+                            <form onsubmit="addTeachingNote(event)">
+                                <div class="form-group"><label>Title</label><input type="text" id="noteTitle" required></div>
+                                <div class="form-group"><label>Content</label><textarea id="noteContent" required style="min-height: 150px;"></textarea></div>
+                                <button type="submit" class="btn-primary">Add</button>
+                            </form>
+                            <table style="margin-top: 15px;"><thead><tr><th>Title</th><th>Action</th></tr></thead><tbody id="teachingNoteBody"></tbody></table>
+                        </div>
+
+                        <div id="adminMCQ" class="tab-content">
+                            <form onsubmit="addMCQ(event)">
+                                <div class="form-group"><label>Question</label><textarea id="mcqQuestion" required></textarea></div>
+                                <div class="form-group"><label>Option A</label><input type="text" id="mcqOptA" required></div>
+                                <div class="form-group"><label>Option B</label><input type="text" id="mcqOptB" required></div>
+                                <div class="form-group"><label>Option C</label><input type="text" id="mcqOptC" required></div>
+                                <div class="form-group"><label>Option D</label><input type="text" id="mcqOptD" required></div>
+                                <div class="form-group"><label>Correct</label><select id="mcqCorrect" required><option>Select</option><option value="0">A</option><option value="1">B</option><option value="2">C</option><option value="3">D</option></select></div>
+                                <div class="form-group"><label>Explanation</label><textarea id="mcqExplanation"></textarea></div>
+                                <button type="submit" class="btn-primary">Add</button>
+                            </form>
+                            <table style="margin-top: 15px;"><thead><tr><th>Question</th><th>Action</th></tr></thead><tbody id="mcqBody"></tbody></table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="footer">OurPICU v1.0 | Patan Academy of Health Sciences, Nepal</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mobile-nav">
+        <div class="mobile-nav-items">
+            <button class="mobile-nav-item active" onclick="showSection('dashboard')">🏠</button>
+            <button class="mobile-nav-item" onclick="showSection('education')">🎓</button>
+            <button class="mobile-nav-item" onclick="showSection('patients')">👶</button>
+            <button class="mobile-nav-item" onclick="showSection('calculators')">🧮</button>
+            <button class="mobile-nav-item" onclick="showSection('export')">📤</button>
+            <button class="mobile-nav-item" onclick="showSection('admin')">⚙️</button>
+        </div>
+    </div>
+</div>
+
+<div id="addPatientModal" class="modal">
+    <div class="modal-content" style="max-width: 500px;">
+        <button class="close-btn" onclick="closeModal('addPatientModal')">✕</button>
+        <div class="modal-header">Add New Patient</div>
+        <form onsubmit="savePatient(event)">
+            <div class="form-group"><label>Bed Number</label><input type="number" id="modalBedNumber" required min="1"></div>
+            <div class="form-group"><label>Age (years)</label><input type="number" id="modalAge" step="0.1" required></div>
+            <div class="form-group"><label>Weight (kg)</label><input type="number" id="modalWeight" step="0.1" required></div>
+            <div class="form-group"><label>Diagnosis</label><input type="text" id="modalDiagnosis" required></div>
+            <div class="form-group"><label>Admission Date</label><input type="date" id="modalAdmissionDate" required></div>
+            <div class="modal-footer">
+                <button type="button" class="btn-outline" onclick="closeModal('addPatientModal')">Cancel</button>
+                <button type="submit" class="btn-primary">Add</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// ===== FIREBASE CONFIG =====
+const firebaseConfig = {
+  apiKey: "AIzaSyBAKOMJAZIVxFA80ZS_CX2OsDQg-PNiswA",
+  authDomain: "ourpicu-a679e.firebaseapp.com",
+  projectId: "ourpicu-a679e",
+  storageBucket: "ourpicu-a679e.firebasestorage.app",
+  messagingSenderId: "419033979210",
+  appId: "1:419033979210:web:747ebd991a4e9bd6c249b3"
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const storage = firebase.storage();
+const auth = firebase.auth();
+
+let currentUser = null;
+let currentPatientId = null;
+let allPatients = [];
+let drugLibrary = [];
+let adminSettings = {
+    doctorName: 'Dr. Prakash Thapa',
+    designation: 'Pediatric Intensivist',
+    hospital: 'Patan Academy of Health Sciences',
+    unitName: 'PICU',
+    beds: 10,
+    drugs: [],
+    videos: [],
+    socialMedia: {},
+    teachingNotes: [],
+    mcqs: []
+};
+
+// Authentication
+auth.onAuthStateChanged(user => {
+    if (user) {
+        currentUser = user;
+        document.getElementById('userEmail').textContent = user.email;
+        document.getElementById('loginSection').classList.remove('active');
+        document.getElementById('mainApp').classList.remove('hidden');
+        loadAllData();
+    } else {
+        currentUser = null;
+        document.getElementById('mainApp').classList.add('hidden');
+        document.getElementById('loginSection').classList.add('active');
+    }
+});
+
+function handleLogin(e) {
+    e.preventDefault();
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+    auth.signInWithEmailAndPassword(email, password).catch(error => {
+        document.getElementById('loginError').textContent = error.message;
+        document.getElementById('loginError').classList.remove('hidden');
+    });
+}
+
+function handleSignup(e) {
+    e.preventDefault();
+    const email = document.getElementById('signupEmail').value;
+    const password = document.getElementById('signupPassword').value;
+    const confirm = document.getElementById('signupPasswordConfirm').value;
+    if (password !== confirm) {
+        document.getElementById('signupError').textContent = 'Passwords do not match!';
+        document.getElementById('signupError').classList.remove('hidden');
+        return;
+    }
+    auth.createUserWithEmailAndPassword(email, password).then(() => {
+        alert('Account created! Sign in now.');
+        toggleSignUp();
+    }).catch(error => {
+        document.getElementById('signupError').textContent = error.message;
+        document.getElementById('signupError').classList.remove('hidden');
+    });
+}
+
+function toggleSignUp() {
+    document.getElementById('loginForm').classList.toggle('hidden');
+    document.getElementById('signupForm').classList.toggle('hidden');
+}
+
+function handleLogout() {
+    auth.signOut().then(() => {
+        currentUser = null;
+        currentPatientId = null;
+    });
+}
+
+// Navigation
+function showSection(name) {
+    document.querySelectorAll('#mainApp .section').forEach(s => s.classList.remove('active'));
+    const s = document.getElementById(name);
+    if (s) s.classList.add('active');
+    const titles = { dashboard: 'Dashboard', education: 'Education', patients: 'Patients', patientDetail: 'Details', calculators: 'Calculators', export: 'Export', admin: 'Admin' };
+    document.getElementById('pageTitle').textContent = titles[name] || 'OurPICU';
+    document.querySelectorAll('.nav-item, .mobile-nav-item').forEach(i => i.classList.remove('active'));
+    const icons = { dashboard: '🏠', education: '🎓', patients: '👶', calculators: '🧮', export: '📤', admin: '⚙️' };
+    const icon = icons[name];
+    if (icon) document.querySelectorAll('.nav-item, .mobile-nav-item').forEach(i => { if (i.textContent.includes(icon)) i.classList.add('active'); });
+}
+
+function switchPatientTab(tab) {
+    document.querySelectorAll('#patientDetail .tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('#patientDetail .tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(tab + 'Tab').classList.add('active');
+    event.target.classList.add('active');
+}
+
+function switchCalculator(calc) {
+    document.querySelectorAll('[id^="calc"]').forEach(e => e.classList.remove('active'));
+    document.querySelectorAll('#calculatorTabs .tab').forEach(e => e.classList.remove('active'));
+    const id = 'calc' + calc.charAt(0).toUpperCase() + calc.slice(1);
+    document.getElementById(id).classList.add('active');
+    event.target.classList.add('active');
+}
+
+function switchEducationTab(tab) {
+    document.querySelectorAll('#educationTabs .tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('#educationTabs .tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(tab + 'Tab').classList.add('active');
+    event.target.classList.add('active');
+}
+
+function switchAdminTab(tab) {
+    document.querySelectorAll('#admin .tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('#admin .tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('admin' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+    event.target.classList.add('active');
+}
+
+function closeModal(id) {
+    document.getElementById(id).classList.remove('active');
+}
+
+// Patients
+async function loadAllPatients() {
+    if (!currentUser) return;
+    try {
+        const snap = await db.collection('patients').where('active', '==', true).get();
+        allPatients = [];
+        snap.forEach(doc => allPatients.push({ id: doc.id, ...doc.data() }));
+        displayPatientsTable();
+        displayBedGrid();
+        loadExportPatientSelect();
+    } catch (e) { console.error(e); }
+}
+
+function displayBedGrid() {
+    const grid = document.getElementById('bedGrid');
+    grid.innerHTML = '';
+    allPatients.forEach(p => {
+        const card = document.createElement('div');
+        card.className = 'bed-card';
+        card.innerHTML = `<div class="bed-number">Bed ${p.bedNumber}</div><div class="bed-info"><strong>${p.diagnosis}</strong></div><div class="bed-info">Age: ${p.age} yrs | ${p.weight} kg</div><div class="bed-status"><span class="badge badge-info">Active</span></div>`;
+        card.onclick = () => viewPatientDetail(p.id);
+        grid.appendChild(card);
+    });
+}
+
+function displayPatientsTable() {
+    const tbody = document.getElementById('patientsTableBody');
+    tbody.innerHTML = '';
+    allPatients.forEach(p => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td><strong>${p.bedNumber}</strong></td><td>${p.age}</td><td>${p.weight}</td><td>${p.diagnosis}</td><td>${new Date(p.admissionDate).toLocaleDateString()}</td><td><button class="btn-small btn-secondary" onclick="viewPatientDetail('${p.id}')">View</button><button class="btn-small btn-danger" onclick="deletePatient('${p.id}')">Delete</button></td>`;
+        tbody.appendChild(tr);
+    });
+}
+
+function openAddPatientModal() {
+    document.getElementById('addPatientModal').classList.add('active');
+}
+
+async function savePatient(e) {
+    e.preventDefault();
+    if (!currentUser) return;
+    const data = {
+        bedNumber: parseInt(document.getElementById('modalBedNumber').value),
+        age: parseFloat(document.getElementById('modalAge').value),
+        weight: parseFloat(document.getElementById('modalWeight').value),
+        diagnosis: document.getElementById('modalDiagnosis').value,
+        admissionDate: document.getElementById('modalAdmissionDate').value,
+        admissionWeight: parseFloat(document.getElementById('modalWeight').value),
+        active: true,
+        createdAt: new Date()
+    };
+    try {
+        await db.collection('patients').add(data);
+        alert('Patient added!');
+        closeModal('addPatientModal');
+        document.querySelector('#addPatientModal form').reset();
+        await loadAllPatients();
+    } catch (error) { alert('Error: ' + error.message); }
+}
+
+async function deletePatient(id) {
+    if (!confirm('Delete?')) return;
+    try {
+        await db.collection('patients').doc(id).update({ active: false });
+        await loadAllPatients();
+    } catch (e) { console.error(e); }
+}
+
+function viewPatientDetail(id) {
+    currentPatientId = id;
+    const p = allPatients.find(x => x.id === id);
+    if (p) {
+        document.getElementById('patientDetailHeader').textContent = `Bed ${p.bedNumber} - ${p.diagnosis}`;
+        document.getElementById('detailBedNumber').textContent = p.bedNumber;
+        document.getElementById('detailAge').textContent = p.age;
+        document.getElementById('detailWeight').textContent = p.weight;
+        document.getElementById('detailDiagnosis').textContent = p.diagnosis;
+        document.getElementById('detailAdmission').textContent = new Date(p.admissionDate).toLocaleDateString();
+        document.getElementById('detailStatus').innerHTML = '<span class="badge badge-success">Active</span>';
+        document.getElementById('fbAdmissionWeight').value = p.admissionWeight || p.weight;
+        loadPatientFluidBalance();
+        loadPatientDrugs();
+        loadPatientInvestigations();
+        loadPatientImages();
+        loadPatientNotes();
+        loadDrugSelectOptions();
+        showSection('patientDetail');
+    }
+}
+
+// Fluid Balance
+function addFBInput() {
+    const div = document.createElement('div');
+    div.className = 'flex gap-10';
+    div.style.marginBottom = '10px';
+    div.innerHTML = `<input type="text" placeholder="Type" class="fbInputType" style="flex: 1;"><input type="number" placeholder="mL" class="fbInputVolume" style="flex: 1;"><button type="button" class="btn-small btn-danger" onclick="removeFBInput(this)">Remove</button>`;
+    document.getElementById('fbInputsContainer').appendChild(div);
+}
+
+function removeFBInput(btn) { btn.parentElement.remove(); }
+
+function addFBDrain() {
+    const div = document.createElement('div');
+    div.className = 'flex gap-10';
+    div.style.marginBottom = '10px';
+    div.innerHTML = `<input type="text" placeholder="Drain" class="fbDrainType" style="flex: 1;"><input type="number" placeholder="mL" class="fbDrainVolume" style="flex: 1;"><button type="button" class="btn-small btn-danger" onclick="removeFBDrain(this)">Remove</button>`;
+    document.getElementById('fbDrainsContainer').appendChild(div);
+}
+
+function removeFBDrain(btn) { btn.parentElement.remove(); }
+
+async function addFluidBalance(e) {
+    e.preventDefault();
+    if (!currentPatientId) return;
+    const fbDate = document.getElementById('fbDate').value;
+    const admWt = parseFloat(document.getElementById('fbAdmissionWeight').value);
+    let totalIn = 0;
+    const inputs = [];
+    document.querySelectorAll('.fbInputType').forEach((elem, idx) => {
+        const type = elem.value;
+        const vol = parseFloat(document.querySelectorAll('.fbInputVolume')[idx].value) || 0;
+        if (type) { inputs.push({ type, vol }); totalIn += vol; }
+    });
+    let totalOut = 0;
+    const urine = parseFloat(document.getElementById('fbUrine').value) || 0;
+    const drains = [];
+    document.querySelectorAll('.fbDrainType').forEach((elem, idx) => {
+        const type = elem.value;
+        const vol = parseFloat(document.querySelectorAll('.fbDrainVolume')[idx].value) || 0;
+        if (type) { drains.push({ type, vol }); totalOut += vol; }
+    });
+    totalOut += urine;
+    const netBal = totalIn - totalOut;
+    const foPercent = (netBal / admWt) * 100;
+    try {
+        await db.collection('patients').doc(currentPatientId).collection('fluidBalance').doc(fbDate).set({
+            date: fbDate, inputs, urine, drains, totalInput: totalIn, totalOutput: totalOut, netBalance: netBal, fluidOverloadPercent: foPercent, timestamp: new Date()
+        });
+        alert('Recorded!');
+        e.target.reset();
+        await loadPatientFluidBalance();
+    } catch (error) { console.error(error); }
+}
+
+async function loadPatientFluidBalance() {
+    if (!currentPatientId) return;
+    try {
+        const snap = await db.collection('patients').doc(currentPatientId).collection('fluidBalance').get();
+        const tbody = document.getElementById('fbTableBody');
+        tbody.innerHTML = '';
+        snap.forEach(doc => {
+            const data = doc.data();
+            const statusColor = data.fluidOverloadPercent < 5 ? 'success' : data.fluidOverloadPercent < 10 ? 'warning' : 'danger';
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${data.date}</td><td>${data.totalInput}</td><td>${data.totalOutput}</td><td>${data.netBalance}</td><td>${data.fluidOverloadPercent.toFixed(1)}%</td><td><span class="badge badge-${statusColor}">${data.fluidOverloadPercent.toFixed(1)}%</span></td>`;
+            tbody.appendChild(tr);
+        });
+    } catch (e) { console.error(e); }
+}
+
+// Drugs
+function getDefaultDrugLibrary() {
+    return [
+        { name: 'Morphine', dosePerKg: '0.1 mg/kg', maxDose: '10 mg', frequency: '4-6h', route: 'IV/SC' },
+        { name: 'Fentanyl', dosePerKg: '1-2 mcg/kg', maxDose: '100 mcg', frequency: 'Continuous', route: 'IV' },
+        { name: 'Midazolam', dosePerKg: '0.05-0.1 mg/kg', maxDose: '5 mg', frequency: '2-4h', route: 'IV' },
+        { name: 'Dopamine', dosePerKg: '5-20 mcg/kg/min', maxDose: 'Continuous', frequency: 'Continuous', route: 'IV' },
+        { name: 'Furosemide', dosePerKg: '1 mg/kg', maxDose: '40 mg', frequency: 'BD-TDS', route: 'IV/PO' },
+        { name: 'Paracetamol', dosePerKg: '15 mg/kg', maxDose: '1000 mg', frequency: '4-6h', route: 'PO/IV' },
+    ];
+}
+
+async function loadDrugLibrary() {
+    if (!currentUser) return;
+    try {
+        const snap = await db.collection('drugs').get();
+        drugLibrary = [];
+        snap.forEach(doc => drugLibrary.push({ id: doc.id, ...doc.data() }));
+    } catch (e) {
+        drugLibrary = getDefaultDrugLibrary();
+    }
+    loadDrugSelectOptions();
+}
+
+function loadDrugSelectOptions() {
+    [document.getElementById('drugName'), document.getElementById('ddDrug')].forEach(s => {
+        if (s) {
+            s.innerHTML = '<option>Select</option>';
+            (drugLibrary.length > 0 ? drugLibrary : getDefaultDrugLibrary()).forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d.name;
+                opt.textContent = d.name;
+                s.appendChild(opt);
+            });
+        }
+    });
+}
+
+async function addDrug(e) {
+    e.preventDefault();
+    if (!currentPatientId) return;
+    const drugName = document.getElementById('drugName').value;
+    const startDate = document.getElementById('drugStartDate').value;
+    const drug = (drugLibrary.length > 0 ? drugLibrary : getDefaultDrugLibrary()).find(d => d.name === drugName);
+    if (!drug) { alert('Not found'); return; }
+    try {
+        await db.collection('patients').doc(currentPatientId).collection('drugs').add({
+            drugName: drug.name, dosePerKg: drug.dosePerKg, maxDose: drug.maxDose, frequency: drug.frequency, route: drug.route, startDate, addedAt: new Date()
+        });
+        alert('Added!');
+        document.getElementById('drugName').value = '';
+        document.getElementById('drugStartDate').value = '';
+        await loadPatientDrugs();
+    } catch (e) { console.error(e); }
+}
+
+async function loadPatientDrugs() {
+    if (!currentPatientId) return;
+    try {
+        const snap = await db.collection('patients').doc(currentPatientId).collection('drugs').get();
+        const tbody = document.getElementById('drugTableBody');
+        tbody.innerHTML = '';
+        snap.forEach(doc => {
+            const data = doc.data();
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td><strong>${data.drugName}</strong></td><td>${data.dosePerKg}</td><td>${data.maxDose}</td><td>${data.frequency}</td><td>${data.route}</td><td>${data.startDate}</td>`;
+            tbody.appendChild(tr);
+        });
+    } catch (e) { console.error(e); }
+}
+
+// Labs
+function addLabTest() {
+    const div = document.createElement('div');
+    div.className = 'flex gap-10';
+    div.style.marginBottom = '10px';
+    div.innerHTML = `<input type="text" placeholder="Test" class="labTestName" style="flex: 1;"><input type="number" placeholder="Value" step="0.01" class="labTestValue" style="flex: 1;"><button type="button" class="btn-small btn-danger" onclick="removeLabTest(this)">Remove</button>`;
+    document.getElementById('labTestsContainer').appendChild(div);
+}
+
+function removeLabTest(btn) { btn.parentElement.remove(); }
+
+async function addInvestigation(e) {
+    e.preventDefault();
+    if (!currentPatientId) return;
+    const invDate = document.getElementById('invDate').value;
+    const labVals = {};
+    document.querySelectorAll('.labTestName').forEach((elem, idx) => {
+        const name = elem.value;
+        const val = document.querySelectorAll('.labTestValue')[idx].value;
+        if (name && val) labVals[name] = parseFloat(val);
+    });
+    try {
+        await db.collection('patients').doc(currentPatientId).collection('investigations').doc(invDate).set({
+            date: invDate, labValues: labVals, timestamp: new Date()
+        });
+        alert('Saved!');
+        e.target.reset();
+        await loadPatientInvestigations();
+    } catch (e) { console.error(e); }
+}
+
+async function loadPatientInvestigations() {
+    if (!currentPatientId) return;
+    try {
+        const snap = await db.collection('patients').doc(currentPatientId).collection('investigations').get();
+        const tbody = document.getElementById('invTableBody');
+        tbody.innerHTML = '';
+        snap.forEach(doc => {
+            const data = doc.data();
+            Object.entries(data.labValues || {}).forEach(([tName, val]) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${data.date}</td><td>${tName}</td><td>${val}</td>`;
+                tbody.appendChild(tr);
+            });
+        });
+    } catch (e) { console.error(e); }
+}
+
+// Images
+async function uploadImage(e) {
+    e.preventDefault();
+    if (!currentPatientId) return;
+    const file = document.getElementById('imageFile').files[0];
+    if (!file) return;
+    if (file.size > 500000) { alert('File too large'); return; }
+    const desc = document.getElementById('imageDescription').value;
+    const type = document.getElementById('imageType').value;
+    try {
+        const path = `patients/${currentPatientId}/${Date.now()}_${file.name}`;
+        const ref = storage.ref(path);
+        await ref.put(file);
+        const url = await ref.getDownloadURL();
+        await db.collection('patients').doc(currentPatientId).collection('images').add({
+            storageUrl: url, description: desc, type, fileName: file.name, timestamp: new Date()
+        });
+        alert('Uploaded!');
+        e.target.reset();
+        await loadPatientImages();
+    } catch (e) { alert('Error: ' + e.message); }
+}
+
+async function loadPatientImages() {
+    if (!currentPatientId) return;
+    try {
+        const snap = await db.collection('patients').doc(currentPatientId).collection('images').get();
+        const cont = document.getElementById('imagesContainer');
+        cont.innerHTML = '';
+        snap.forEach(doc => {
+            const data = doc.data();
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `<p><strong>${data.type}:</strong> ${data.description}</p><img src="${data.storageUrl}" style="max-width: 200px; border-radius: 6px; margin: 10px 0;">`;
+            cont.appendChild(card);
+        });
+    } catch (e) { console.error(e); }
+}
+
+// Notes
+async function addClinicalNote(e) {
+    e.preventDefault();
+    if (!currentPatientId) return;
+    const text = document.getElementById('noteText').value;
+    try {
+        await db.collection('patients').doc(currentPatientId).collection('notes').add({
+            text, type: 'clinical', timestamp: new Date()
+        });
+        alert('Added!');
+        document.getElementById('noteText').value = '';
+        await loadPatientNotes();
+    } catch (e) { console.error(e); }
+}
+
+async function loadPatientNotes() {
+    if (!currentPatientId) return;
+    try {
+        const snap = await db.collection('patients').doc(currentPatientId).collection('notes').get();
+        const cont = document.getElementById('notesContainer');
+        cont.innerHTML = '';
+        snap.forEach(doc => {
+            const data = doc.data();
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.style.marginBottom = '10px';
+            card.innerHTML = `<p>${data.text}</p><p style="font-size: 12px; color: #999; margin-top: 8px;">${new Date(data.timestamp.toDate()).toLocaleString()}</p>`;
+            cont.appendChild(card);
+        });
+    } catch (e) { console.error(e); }
+}
+
+// Calculators
+function calculateISL(age, wt, temp, vent, crrt) {
+    let base = 0;
+    if (age < 0.083) base = 50;
+    else if (age < 1) base = 35;
+    else if (age < 3) base = 22.5;
+    else if (age < 6) base = 20;
+    else if (age < 12) base = 16.5;
+    else if (age < 18) base = 14;
+    else base = 13;
+    let adj = 0;
+    switch(vent) {
+        case 'hfnc': adj = -4; break;
+        case 'niv': adj = -4; break;
+        case 'humidified': adj = -7; break;
+        case 'nonhumidified': adj = -2.5; break;
+    }
+    let result = base + adj;
+    if (temp > 37) result += result * 0.12 * (temp - 37);
+    if (crrt === 'yes') result -= 5;
+    return { baseISL: base.toFixed(1), ventAdjustment: adj.toFixed(1), adjustedISL: result.toFixed(1), dailyISL: (result * wt).toFixed(0) };
+}
+
+function calcFluidBalanceFunc(e) {
+    e.preventDefault();
+    const age = parseFloat(document.getElementById('cbAge').value);
+    const wt = parseFloat(document.getElementById('cbWeight').value);
+    const temp = parseFloat(document.getElementById('cbTemp').value);
+    const vent = document.getElementById('cbVentilation').value;
+    const crrt = document.getElementById('cbCRRT').value;
+    const cumIn = parseFloat(document.getElementById('cbCumInput').value) || 0;
+    const cumOut = parseFloat(document.getElementById('cbCumOutput').value) || 0;
+    const admWt = parseFloat(document.getElementById('cbAdmWeight').value);
+    const isl = calculateISL(age, wt, temp, vent, crrt);
+    let foP = 0, foStatus = 'success', foAlert = 'OK';
+    if (admWt > 0) {
+        foP = ((cumIn - cumOut) / admWt) * 100;
+        if (foP < 5) { foStatus = 'success'; foAlert = 'Acceptable'; }
+        else if (foP < 10) { foStatus = 'warning'; foAlert = 'Mild - restrict'; }
+        else if (foP < 15) { foStatus = 'danger'; foAlert = 'Moderate'; }
+        else { foStatus = 'danger'; foAlert = 'Severe - escalate'; }
+    }
+    const res = document.getElementById('fbCalcResult');
+    res.innerHTML = `<div class="result-box"><div class="result-row"><span class="result-label">Base ISL:</span><span class="result-value">${isl.baseISL} mL/kg/day</span></div><div class="result-row"><span class="result-label">Adjusted ISL:</span><span class="result-value">${isl.adjustedISL} mL/kg/day</span></div><div class="result-row"><span class="result-label">Daily:</span><span class="result-value" style="color: var(--accent); font-size: 16px;">${isl.dailyISL} mL/day</span></div>${admWt > 0 ? `<div class="result-row"><span class="result-label">FO:</span><span class="result-value badge badge-${foStatus}">${foP.toFixed(1)}%</span></div><div class="alert alert-${foStatus}" style="margin-top: 10px;">${foAlert}</div>` : ''}</div>`;
+}
+
+function calcDrugDoseFunc(e) {
+    e.preventDefault();
+    const wt = parseFloat(document.getElementById('ddWeight').value);
+    const dName = document.getElementById('ddDrug').value;
+    const drug = (drugLibrary.length > 0 ? drugLibrary : getDefaultDrugLibrary()).find(d => d.name === dName);
+    if (!drug) { alert('Not found'); return; }
+    const res = document.getElementById('ddResult');
+    res.innerHTML = `<div class="result-box"><div class="result-row"><span class="result-label">Drug:</span><span class="result-value" style="font-size: 16px;">${drug.name}</span></div><div class="result-row"><span class="result-label">Dose/kg:</span><span class="result-value">${drug.dosePerKg}</span></div><div class="result-row"><span class="result-label">Max:</span><span class="result-value">${drug.maxDose}</span></div><div class="result-row"><span class="result-label">Freq:</span><span class="result-value">${drug.frequency}</span></div><div class="result-row"><span class="result-label">Route:</span><span class="result-value">${drug.route}</span></div></div>`;
+}
+
+function calcVentilatorFunc(e) {
+    e.preventDefault();
+    const age = parseFloat(document.getElementById('ventAge').value);
+    const wt = parseFloat(document.getElementById('ventWeight').value);
+    const tvMin = (wt * 6).toFixed(1);
+    const tvMax = (wt * 8).toFixed(1);
+    let rate = 20;
+    if (age < 1) rate = 30;
+    else if (age < 3) rate = 25;
+    else if (age < 6) rate = 22;
+    else if (age < 12) rate = 18;
+    const ett1 = (age / 4 + 4).toFixed(1);
+    const ett2 = (age / 4 + 3.5).toFixed(1);
+    const depth = (age / 2 + 12).toFixed(0);
+    const res = document.getElementById('ventResult');
+    res.innerHTML = `<div class="result-box"><div class="result-row"><span class="result-label">Tidal Vol:</span><span class="result-value">${tvMin}-${tvMax} mL</span></div><div class="result-row"><span class="result-label">Rate:</span><span class="result-value">${rate} /min</span></div><div class="result-row"><span class="result-label">PEEP:</span><span class="result-value">5 cm H₂O</span></div><div class="result-row"><span class="result-label">ETT (U):</span><span class="result-value">${ett1} mm</span></div><div class="result-row"><span class="result-label">ETT (C):</span><span class="result-value">${ett2} mm</span></div><div class="result-row"><span class="result-label">Depth:</span><span class="result-value">${depth} cm</span></div></div>`;
+}
+
+function calcSepsisFunc(e) {
+    e.preventDefault();
+    const gcs = parseInt(document.getElementById('gcs').value);
+    const pf = parseFloat(document.getElementById('pf').value);
+    const paco2 = parseFloat(document.getElementById('paco2').value);
+    const lac = parseFloat(document.getElementById('lactate').value);
+    const plat = parseFloat(document.getElementById('platelets').value);
+    const crea = parseFloat(document.getElementById('creatinine').value);
+    let score = 0;
+    if (gcs <= 5) score += 4; else if (gcs <= 7) score += 3; else if (gcs <= 13) score += 2; else if (gcs <= 14) score += 1;
+    if (pf < 100) score += 4; else if (pf < 200) score += 3; else if (pf < 300) score += 1;
+    if (paco2 >= 65) score += 3; else if (paco2 <= 30) score += 2;
+    if (lac >= 11) score += 4; else if (lac >= 5) score += 3; else if (lac >= 2) score += 1;
+    if (plat < 25) score += 4; else if (plat < 50) score += 3; else if (plat < 100) score += 2; else if (plat < 150) score += 1;
+    if (crea >= 3) score += 3; else if (crea >= 1.8) score += 2; else if (crea >= 0.7) score += 1;
+    let mort = 1;
+    if (score <= 7) mort = 1; else if (score <= 11) mort = 5; else if (score <= 15) mort = 15; else if (score <= 20) mort = 40; else mort = 75;
+    const res = document.getElementById('sepsisResult');
+    res.innerHTML = `<div class="result-box"><div class="result-row"><span class="result-label">PELOD-2:</span><span class="result-value" style="font-size: 18px; color: var(--danger);">${score}</span></div><div class="result-row"><span class="result-label">Mortality:</span><span class="result-value" style="font-size: 16px;">${mort}%</span></div><div class="alert alert-${mort < 10 ? 'success' : mort < 30 ? 'warning' : 'danger'}" style="margin-top: 15px;">${mort < 10 ? 'Low' : mort < 30 ? 'Moderate' : 'High risk'}</div></div>`;
+}
+
+function calcRAIFunc(e) {
+    e.preventDefault();
+    const tier = parseInt(document.getElementById('raiTier').value);
+    const fo = parseFloat(document.getElementById('raiFluidOverload').value);
+    const rai = tier * fo;
+    const pos = rai >= 8;
+    const res = document.getElementById('raiResult');
+    res.innerHTML = `<div class="result-box"><div class="result-row"><span class="result-label">RAI:</span><span class="result-value" style="font-size: 18px; color: var(--accent);">${rai.toFixed(1)}</span></div><div class="alert alert-${pos ? 'danger' : 'success'}" style="margin-top: 15px;">${pos ? '⚠️ HIGH RISK AKI' : '✓ Low risk'}</div></div>`;
+}
+
+function calcNutritionFunc(e) {
+    e.preventDefault();
+    const age = parseFloat(document.getElementById('nutAge').value);
+    const wt = parseFloat(document.getElementById('nutWeight').value);
+    const route = document.getElementById('nutRoute').value;
+    let cal = 0;
+    if (age < 1) cal = wt * 100; else if (age < 10) cal = (wt * 80) + 400; else cal = (wt * 50) + 900;
+    let prot = 0;
+    if (age < 0.5) prot = wt * 3; else if (age < 1) prot = wt * 2.5; else if (age < 3) prot = wt * 2; else if (age < 6) prot = wt * 1.8; else if (age < 12) prot = wt * 1.5; else prot = wt * 1.2;
+    let fluid = 0;
+    if (wt < 10) fluid = wt * 100; else if (wt < 20) fluid = 1000 + ((wt - 10) * 50); else fluid = 1500 + ((wt - 20) * 20);
+    let info = '';
+    if (route === 'enteral') {
+        const rate = (fluid / 24).toFixed(1);
+        info = `<div class="result-row"><span class="result-label">Feed Rate:</span><span class="result-value">${rate} mL/hr</span></div>`;
+    } else if (route === 'parenteral') {
+        const gir = ((cal * 0.17) / wt).toFixed(1);
+        info = `<div class="result-row"><span class="result-label">GIR:</span><span class="result-value">${gir} mg/kg/min</span></div>`;
+    }
+    const res = document.getElementById('nutResult');
+    res.innerHTML = `<div class="result-box"><div class="result-row"><span class="result-label">Calories:</span><span class="result-value" style="font-size: 16px; color: var(--accent);">${cal.toFixed(0)} kcal</span></div><div class="result-row"><span class="result-label">Protein:</span><span class="result-value">${prot.toFixed(1)} g</span></div><div class="result-row"><span class="result-label">Fluid:</span><span class="result-value">${fluid.toFixed(0)} mL</span></div>${info}</div>`;
+}
+
+function calcPALSFunc(e) {
+    e.preventDefault();
+    let wt = parseFloat(document.getElementById('palsWeight').value);
+    if (!wt || wt === 0) {
+        const age = parseFloat(document.getElementById('palsAge').value);
+        if (age < 1) wt = age * 3.5 + 3.5; else if (age < 5) wt = (age * 2) + 11; else if (age < 12) wt = (age * 2.5) + 5; else wt = (age * 3) + 5;
+    }
+    const res = document.getElementById('palsResult');
+    res.innerHTML = `<div class="result-box"><div style="font-weight: bold; color: var(--primary); margin-bottom: 10px;">Weight: ${wt.toFixed(1)} kg</div><div class="result-row"><span class="result-label">Adrenaline:</span><span class="result-value">${(wt * 0.01).toFixed(2)} mg</span></div><div class="result-row"><span class="result-label">Atropine:</span><span class="result-value">${(wt * 0.02).toFixed(2)} mg</span></div><div class="result-row"><span class="result-label">Adenosine:</span><span class="result-value">${(wt * 0.1).toFixed(2)} mg</span></div><div class="result-row"><span class="result-label">Amiodarone:</span><span class="result-value">${(wt * 5).toFixed(0)} mg</span></div><div class="result-row"><span class="result-label">Sodium Bicarb:</span><span class="result-value">${(wt * 1).toFixed(1)} mEq</span></div></div>`;
+}
+
+// Education
+async function loadEducationData() {
+    try {
+        const doc = await db.collection('settings').doc('education').get();
+        if (doc.exists) { /* use doc.data() */ }
+    } catch (e) { console.error(e); }
+    displayVideos();
+    displayTeachingNotes();
+    displayMCQs();
+    displaySocialLinks();
+}
+
+function displayVideos() {
+    const cont = document.getElementById('videosContainer');
+    cont.innerHTML = '';
+    if (!adminSettings.videos || adminSettings.videos.length === 0) {
+        cont.innerHTML = '<p style="text-align: center; color: #999;">No videos</p>';
+        return;
+    }
+    adminSettings.videos.forEach(v => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; margin-bottom: 10px;"><iframe style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" src="https://www.youtube.com/embed/${v.youtubeId}" frameborder="0" allowfullscreen></iframe></div><h3 style="color: var(--primary);">${v.title}</h3>`;
+        cont.appendChild(card);
+    });
+}
+
+function displayTeachingNotes() {
+    const cont = document.getElementById('teachingNotesContainer');
+    cont.innerHTML = '';
+    if (!adminSettings.teachingNotes || adminSettings.teachingNotes.length === 0) {
+        cont.innerHTML = '<p>No notes</p>';
+        return;
+    }
+    adminSettings.teachingNotes.forEach(n => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `<h3 style="color: var(--primary);">${n.title}</h3><p style="white-space: pre-wrap;">${n.content}</p>`;
+        cont.appendChild(card);
+    });
+}
+
+function displayMCQs() {
+    const cont = document.getElementById('mcqContainer');
+    cont.innerHTML = '';
+    if (!adminSettings.mcqs || adminSettings.mcqs.length === 0) {
+        cont.innerHTML = '<p>No MCQs</p>';
+        return;
+    }
+    adminSettings.mcqs.forEach((m, idx) => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `<h4 style="color: var(--primary);">Q${idx + 1}: ${m.question}</h4><div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px;">${['A', 'B', 'C', 'D'].map((l, oi) => `<label style="display: flex; padding: 10px; border: 2px solid var(--border); border-radius: 6px; cursor: pointer;"><input type="radio" name="mcq_${idx}" value="${oi}" onchange="checkMCQAnswer(${idx}, ${oi}, ${m.correctIndex})"><span style="margin-left: 10px;">${l}. ${m.options[oi]}</span></label>`).join('')}</div><div id="mcqFeedback_${idx}" style="display: none; margin-top: 15px; padding: 15px; border-radius: 6px;"></div>`;
+        cont.appendChild(card);
+    });
+}
+
+function checkMCQAnswer(idx, sel, corr) {
+    const isC = sel === parseInt(corr);
+    const fb = document.getElementById('mcqFeedback_' + idx);
+    if (isC) {
+        fb.style.backgroundColor = '#e8f5e9';
+        fb.style.borderLeft = '4px solid var(--success)';
+        fb.innerHTML = `<p style="color: var(--success); font-weight: bold;">✓ Correct!</p>`;
+    } else {
+        fb.style.backgroundColor = '#ffebee';
+        fb.style.borderLeft = '4px solid var(--danger)';
+        fb.innerHTML = `<p style="color: var(--danger); font-weight: bold;">✗ Incorrect</p><p>Correct: <strong>${['A', 'B', 'C', 'D'][parseInt(corr)]}</strong></p>`;
+    }
+    fb.style.display = 'block';
+}
+
+function displaySocialLinks() {
+    const m = adminSettings.socialMedia || {};
+    if (m.youtube) document.getElementById('youtubeLink').href = m.youtube;
+    if (m.facebook) document.getElementById('facebookLink').href = m.facebook;
+    if (m.twitter) document.getElementById('twitterLink').href = m.twitter;
+    if (m.instagram) document.getElementById('instagramLink').href = m.instagram;
+}
+
+// Export
+function loadExportPatientSelect() {
+    const s = document.getElementById('exportPatientSelect');
+    s.innerHTML = '<option>All</option>';
+    allPatients.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = `Bed ${p.bedNumber} - ${p.diagnosis}`;
+        s.appendChild(opt);
+    });
+}
+
+async function exportAllData() {
+    const wb = XLSX.utils.book_new();
+    const data = allPatients.map(p => ({ 'Bed': p.bedNumber, 'Age': p.age, 'Weight': p.weight, 'Diagnosis': p.diagnosis, 'Admission': p.admissionDate }));
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), 'Patients');
+    XLSX.writeFile(wb, `OurPICU_${new Date().toISOString().split('T')[0]}.xlsx`);
+    alert('Exported!');
+}
+
+async function exportPatientData() {
+    const pid = document.getElementById('exportPatientSelect').value;
+    if (!pid) { alert('Select patient'); return; }
+    const p = allPatients.find(x => x.id === pid);
+    if (!p) return;
+    const wb = XLSX.utils.book_new();
+    const data = [{ 'Bed': p.bedNumber, 'Age': p.age, 'Weight': p.weight, 'Diagnosis': p.diagnosis }];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), 'Info');
+    XLSX.writeFile(wb, `Bed${p.bedNumber}.xlsx`);
+    alert('Exported!');
+}
+
+// Admin
+async function loadAdminSettings() {
+    if (!currentUser) return;
+    try {
+        const doc = await db.collection('settings').doc('admin').get();
+        if (doc.exists) adminSettings = { ...adminSettings, ...doc.data() };
+    } catch (e) { console.error(e); }
+    document.getElementById('adminDoctorName').value = adminSettings.doctorName || '';
+    document.getElementById('adminDesignation').value = adminSettings.designation || '';
+    document.getElementById('adminHospital').value = adminSettings.hospital || '';
+    document.getElementById('adminUnitName').value = adminSettings.unitName || '';
+    document.getElementById('adminBeds').value = adminSettings.beds || 10;
+    document.getElementById('doctorName').textContent = adminSettings.doctorName || 'Dr. Prakash Thapa';
+    loadDrugLibraryForAdmin();
+    loadTeachingNotesForAdmin();
+    loadVideosForAdmin();
+    loadMCQsForAdmin();
+    loadSocialMediaForAdmin();
+}
+
+async function saveAdminProfile(e) {
+    e.preventDefault();
+    if (!currentUser) return;
+    const newPass = document.getElementById('adminNewPassword').value;
+    adminSettings.doctorName = document.getElementById('adminDoctorName').value;
+    adminSettings.designation = document.getElementById('adminDesignation').value;
+    try {
+        await db.collection('settings').doc('admin').set(adminSettings, { merge: true });
+        if (newPass && newPass.length >= 6) {
+            await currentUser.updatePassword(newPass);
+            alert('Updated!');
+        } else if (newPass && newPass.length < 6) {
+            alert('Password min 6 chars');
+            return;
+        } else {
+            alert('Updated!');
+        }
+        document.getElementById('adminNewPassword').value = '';
+        document.getElementById('doctorName').textContent = adminSettings.doctorName;
+    } catch (e) { alert(e.message); }
+}
+
+async function saveAdminPICU(e) {
+    e.preventDefault();
+    adminSettings.hospital = document.getElementById('adminHospital').value;
+    adminSettings.unitName = document.getElementById('adminUnitName').value;
+    adminSettings.beds = parseInt(document.getElementById('adminBeds').value);
+    try {
+        await db.collection('settings').doc('admin').set(adminSettings, { merge: true });
+        alert('Saved!');
+    } catch (e) { console.error(e); }
+}
+
+function loadDrugLibraryForAdmin() {
+    const tbody = document.getElementById('drugLibraryBody');
+    tbody.innerHTML = '';
+    (adminSettings.drugs && adminSettings.drugs.length > 0 ? adminSettings.drugs : getDefaultDrugLibrary()).forEach((d, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${d.name}</td><td><button class="btn-small btn-danger" onclick="deleteDrugFromLibrary(${i})">Delete</button></td>`;
+        tbody.appendChild(tr);
+    });
+}
+
+async function addDrugToLibrary(e) {
+    e.preventDefault();
+    const drug = {
+        name: document.getElementById('drugLibraryName').value,
+        dosePerKg: document.getElementById('drugLibraryDose').value,
+        maxDose: document.getElementById('drugLibraryMax').value,
+        frequency: document.getElementById('drugLibraryFreq').value,
+        route: document.getElementById('drugLibraryRoute').value
+    };
+    if (!adminSettings.drugs) adminSettings.drugs = [];
+    adminSettings.drugs.push(drug);
+    try {
+        await db.collection('settings').doc('admin').set(adminSettings, { merge: true });
+        alert('Added!');
+        e.target.reset();
+        loadDrugLibraryForAdmin();
+        loadDrugSelectOptions();
+    } catch (e) { console.error(e); }
+}
+
+async function deleteDrugFromLibrary(idx) {
+    if (!confirm('Delete?')) return;
+    adminSettings.drugs.splice(idx, 1);
+    try {
+        await db.collection('settings').doc('admin').set(adminSettings, { merge: true });
+        loadDrugLibraryForAdmin();
+        loadDrugSelectOptions();
+    } catch (e) { console.error(e); }
+}
+
+function loadVideosForAdmin() {
+    const tbody = document.getElementById('videoBody');
+    tbody.innerHTML = '';
+    if (adminSettings.videos && adminSettings.videos.length > 0) {
+        adminSettings.videos.forEach((v, idx) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${v.title}</td><td><button class="btn-small btn-danger" onclick="deleteVideo(${idx})">Delete</button></td>`;
+            tbody.appendChild(tr);
+        });
+    }
+}
+
+async function addEducationVideo(e) {
+    e.preventDefault();
+    const video = {
+        title: document.getElementById('videoTitle').value,
+        youtubeId: document.getElementById('youtubeId').value,
+        description: document.getElementById('videoDescription').value
+    };
+    if (!adminSettings.videos) adminSettings.videos = [];
+    adminSettings.videos.push(video);
+    try {
+        await db.collection('settings').doc('admin').set(adminSettings, { merge: true });
+        alert('Added!');
+        e.target.reset();
+        loadVideosForAdmin();
+        loadEducationData();
+    } catch (e) { console.error(e); }
+}
+
+async function deleteVideo(idx) {
+    if (!confirm('Delete?')) return;
+    adminSettings.videos.splice(idx, 1);
+    try {
+        await db.collection('settings').doc('admin').set(adminSettings, { merge: true });
+        loadVideosForAdmin();
+        loadEducationData();
+    } catch (e) { console.error(e); }
+}
+
+function loadSocialMediaForAdmin() {
+    const m = adminSettings.socialMedia || {};
+    document.getElementById('smYoutube').value = m.youtube || '';
+    document.getElementById('smFacebook').value = m.facebook || '';
+    document.getElementById('smTwitter').value = m.twitter || '';
+    document.getElementById('smInstagram').value = m.instagram || '';
+}
+
+async function saveSocialMedia(e) {
+    e.preventDefault();
+    adminSettings.socialMedia = {
+        youtube: document.getElementById('smYoutube').value,
+        facebook: document.getElementById('smFacebook').value,
+        twitter: document.getElementById('smTwitter').value,
+        instagram: document.getElementById('smInstagram').value
+    };
+    try {
+        await db.collection('settings').doc('admin').set(adminSettings, { merge: true });
+        alert('Saved!');
+        loadEducationData();
+    } catch (e) { console.error(e); }
+}
+
+function loadTeachingNotesForAdmin() {
+    const tbody = document.getElementById('teachingNoteBody');
+    tbody.innerHTML = '';
+    if (adminSettings.teachingNotes && adminSettings.teachingNotes.length > 0) {
+        adminSettings.teachingNotes.forEach((n, idx) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${n.title}</td><td>${n.date}</td><td><button class="btn-small btn-danger" onclick="deleteTeachingNote(${idx})">Delete</button></td>`;
+            tbody.appendChild(tr);
+        });
+    }
+}
+
+async function addTeachingNote(e) {
+    e.preventDefault();
+    const note = {
+        title: document.getElementById('noteTitle').value,
+        content: document.getElementById('noteContent').value,
+        date: new Date().toLocaleDateString()
+    };
+    if (!adminSettings.teachingNotes) adminSettings.teachingNotes = [];
+    adminSettings.teachingNotes.push(note);
+    try {
+        await db.collection('settings').doc('admin').set(adminSettings, { merge: true });
+        alert('Added!');
+        e.target.reset();
+        loadTeachingNotesForAdmin();
+        loadEducationData();
+    } catch (e) { console.error(e); }
+}
+
+async function deleteTeachingNote(idx) {
+    if (!confirm('Delete?')) return;
+    adminSettings.teachingNotes.splice(idx, 1);
+    try {
+        await db.collection('settings').doc('admin').set(adminSettings, { merge: true });
+        loadTeachingNotesForAdmin();
+        loadEducationData();
+    } catch (e) { console.error(e); }
+}
+
+function loadMCQsForAdmin() {
+    const tbody = document.getElementById('mcqBody');
+    tbody.innerHTML = '';
+    if (adminSettings.mcqs && adminSettings.mcqs.length > 0) {
+        adminSettings.mcqs.forEach((m, idx) => {
+            const tr = document.createElement('tr');
+            const ans = ['A', 'B', 'C', 'D'][m.correctIndex];
+            tr.innerHTML = `<td>${m.question.substring(0, 40)}...</td><td><strong>${ans}</strong></td><td><button class="btn-small btn-danger" onclick="deleteMCQ(${idx})">Delete</button></td>`;
+            tbody.appendChild(tr);
+        });
+    }
+}
+
+async function addMCQ(e) {
+    e.preventDefault();
+    const mcq = {
+        question: document.getElementById('mcqQuestion').value,
+        options: [
+            document.getElementById('mcqOptA').value,
+            document.getElementById('mcqOptB').value,
+            document.getElementById('mcqOptC').value,
+            document.getElementById('mcqOptD').value
+        ],
+        correctIndex: parseInt(document.getElementById('mcqCorrect').value),
+        explanation: document.getElementById('mcqExplanation').value
+    };
+    if (!adminSettings.mcqs) adminSettings.mcqs = [];
+    adminSettings.mcqs.push(mcq);
+    try {
+        await db.collection('settings').doc('admin').set(adminSettings, { merge: true });
+        alert('Added!');
+        e.target.reset();
+        loadMCQsForAdmin();
+        loadEducationData();
+    } catch (e) { console.error(e); }
+}
+
+async function deleteMCQ(idx) {
+    if (!confirm('Delete?')) return;
+    adminSettings.mcqs.splice(idx, 1);
+    try {
+        await db.collection('settings').doc('admin').set(adminSettings, { merge: true });
+        loadMCQsForAdmin();
+        loadEducationData();
+    } catch (e) { console.error(e); }
+}
+
+// Main load
+async function loadAllData() {
+    if (!currentUser) return;
+    await Promise.all([
+        loadAllPatients(),
+        loadDrugLibrary(),
+        loadEducationData(),
+        loadAdminSettings()
+    ]);
+    const today = new Date().toISOString().split('T')[0];
+    ['fbDate', 'invDate', 'drugStartDate'].forEach(id => {
+        const e = document.getElementById(id);
+        if (e) e.value = today;
+    });
+}
+
+// Startup
+window.addEventListener('DOMContentLoaded', () => {
+    const today = new Date().toISOString().split('T')[0];
+    ['fbDate', 'invDate', 'drugStartDate'].forEach(id => {
+        const e = document.getElementById(id);
+        if (e) e.value = today;
+    });
+});
+</script>
+</body>
+</html>
+
+
