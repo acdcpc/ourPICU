@@ -94,9 +94,7 @@
         .login-subtitle { text-align: center; font-size: 14px; color: #666; margin-bottom: 30px; }
         .hidden { display: none !important; }
         .text-center { text-align: center; }
-        .text-muted { color: #999; }
         .flex { display: flex; }
-        .flex-between { display: flex; justify-content: space-between; align-items: center; }
         .gap-10 { gap: 10px; }
         .footer { text-align: center; font-size: 12px; color: #999; margin-top: 30px; padding-top: 15px; border-top: 1px solid var(--border); }
         .mobile-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; background-color: var(--primary); border-top: 1px solid var(--border); padding: 10px 0; z-index: 100; }
@@ -117,7 +115,6 @@
         @media (max-width: 480px) {
             .login-card { padding: 20px; margin: 20px; }
             button { width: 100%; }
-            .modal-footer { flex-direction: column; }
         }
     </style>
 </head>
@@ -129,17 +126,6 @@
             <div class="login-logo">🏥</div>
             <h1 style="text-align: center; margin-bottom: 10px; color: var(--primary);">OurPICU</h1>
             <div class="login-subtitle">Pediatric Intensive Care Management</div>
-            
-            <div id="firebaseConfigForm" class="hidden">
-                <div class="alert alert-info">First time setup: Enter your Firebase configuration keys</div>
-                <div class="form-group"><label>API Key</label><input type="text" id="apiKey"></div>
-                <div class="form-group"><label>Auth Domain</label><input type="text" id="authDomain"></div>
-                <div class="form-group"><label>Project ID</label><input type="text" id="projectId"></div>
-                <div class="form-group"><label>Storage Bucket</label><input type="text" id="storageBucket"></div>
-                <div class="form-group"><label>Messaging Sender ID</label><input type="text" id="messagingSenderId"></div>
-                <div class="form-group"><label>App ID</label><input type="text" id="appId"></div>
-                <button class="btn-primary" onclick="saveFirebaseConfig()" style="width: 100%;">Save Configuration</button>
-            </div>
 
             <div id="loginForm">
                 <form onsubmit="handleLogin(event)">
@@ -162,7 +148,6 @@
                 <div style="text-align: center; margin-top: 20px;"><button class="btn-outline" onclick="toggleSignUp()" style="width: 100%;">Back to Sign In</button></div>
             </div>
 
-            <div style="margin-top: 20px; text-align: center;"><button class="btn-outline" onclick="viewPublicEducation()" style="width: 100%;">📚 View Public Education</button></div>
             <div class="footer">OurPICU v1.0 | Patan Academy of Health Sciences, Nepal</div>
         </div>
     </div>
@@ -506,9 +491,26 @@
 </div>
 
 <script>
-let firebaseConfig = null, firebaseApp = null, db = null, storage = null, auth = null;
-let currentUser = null, currentPatientId = null, allPatients = [], drugLibrary = [];
-let educationData = { videos: [], teachingNotes: [], mcqs: [], socialMedia: {} };
+// ===== FIREBASE CONFIG =====
+const firebaseConfig = {
+  apiKey: "AIzaSyBAKOMJAZIVxFA80ZS_CX2OsDQg-PNiswA",
+  authDomain: "ourpicu-a679e.firebaseapp.com",
+  projectId: "ourpicu-a679e",
+  storageBucket: "ourpicu-a679e.firebasestorage.app",
+  messagingSenderId: "419033979210",
+  appId: "1:419033979210:web:747ebd991a4e9bd6c249b3"
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const storage = firebase.storage();
+const auth = firebase.auth();
+
+let currentUser = null;
+let currentPatientId = null;
+let allPatients = [];
+let drugLibrary = [];
 let adminSettings = {
     doctorName: 'Dr. Prakash Thapa',
     designation: 'Pediatric Intensivist',
@@ -516,67 +518,32 @@ let adminSettings = {
     unitName: 'PICU',
     beds: 10,
     drugs: [],
-    labTests: [],
     videos: [],
     socialMedia: {},
     teachingNotes: [],
     mcqs: []
 };
 
-function initFirebase() {
-    const saved = localStorage.getItem('firebaseConfig');
-    if (saved) {
-        firebaseConfig = JSON.parse(saved);
-        startFirebase();
+// Authentication
+auth.onAuthStateChanged(user => {
+    if (user) {
+        currentUser = user;
+        document.getElementById('userEmail').textContent = user.email;
+        document.getElementById('loginSection').classList.remove('active');
+        document.getElementById('mainApp').classList.remove('hidden');
+        loadAllData();
     } else {
-        document.getElementById('firebaseConfigForm').classList.remove('hidden');
+        currentUser = null;
+        document.getElementById('mainApp').classList.add('hidden');
+        document.getElementById('loginSection').classList.add('active');
     }
-}
-
-function saveFirebaseConfig() {
-    firebaseConfig = {
-        apiKey: document.getElementById('apiKey').value,
-        authDomain: document.getElementById('authDomain').value,
-        projectId: document.getElementById('projectId').value,
-        storageBucket: document.getElementById('storageBucket').value,
-        messagingSenderId: document.getElementById('messagingSenderId').value,
-        appId: document.getElementById('appId').value
-    };
-    localStorage.setItem('firebaseConfig', JSON.stringify(firebaseConfig));
-    document.getElementById('firebaseConfigForm').classList.add('hidden');
-    startFirebase();
-    alert('Firebase configured!');
-}
-
-function startFirebase() {
-    try {
-        firebaseApp = firebase.initializeApp(firebaseConfig);
-        db = firebase.firestore();
-        storage = firebase.storage();
-        auth = firebase.auth();
-        firebase.auth().onAuthStateChanged(user => {
-            if (user) {
-                currentUser = user;
-                document.getElementById('userEmail').textContent = user.email;
-                document.getElementById('loginSection').classList.remove('active');
-                document.getElementById('mainApp').classList.remove('hidden');
-                loadAllData();
-            } else {
-                currentUser = null;
-                document.getElementById('mainApp').classList.add('hidden');
-                document.getElementById('loginSection').classList.add('active');
-            }
-        });
-    } catch (e) {
-        console.error(e);
-    }
-}
+});
 
 function handleLogin(e) {
     e.preventDefault();
     const email = document.getElementById('loginEmail').value;
     const password = document.getElementById('loginPassword').value;
-    firebase.auth().signInWithEmailAndPassword(email, password).catch(error => {
+    auth.signInWithEmailAndPassword(email, password).catch(error => {
         document.getElementById('loginError').textContent = error.message;
         document.getElementById('loginError').classList.remove('hidden');
     });
@@ -592,7 +559,7 @@ function handleSignup(e) {
         document.getElementById('signupError').classList.remove('hidden');
         return;
     }
-    firebase.auth().createUserWithEmailAndPassword(email, password).then(() => {
+    auth.createUserWithEmailAndPassword(email, password).then(() => {
         alert('Account created! Sign in now.');
         toggleSignUp();
     }).catch(error => {
@@ -607,18 +574,13 @@ function toggleSignUp() {
 }
 
 function handleLogout() {
-    firebase.auth().signOut().then(() => {
+    auth.signOut().then(() => {
         currentUser = null;
         currentPatientId = null;
-        document.getElementById('mainApp').classList.add('hidden');
-        document.getElementById('loginSection').classList.add('active');
     });
 }
 
-function viewPublicEducation() {
-    if (!currentUser) alert('Sign in to access full features.');
-}
-
+// Navigation
 function showSection(name) {
     document.querySelectorAll('#mainApp .section').forEach(s => s.classList.remove('active'));
     const s = document.getElementById(name);
@@ -664,9 +626,9 @@ function closeModal(id) {
     document.getElementById(id).classList.remove('active');
 }
 
-// Add remaining functions (continued in next section)...
+// Patients
 async function loadAllPatients() {
-    if (!db || !currentUser) return;
+    if (!currentUser) return;
     try {
         const snap = await db.collection('patients').where('active', '==', true).get();
         allPatients = [];
@@ -705,7 +667,7 @@ function openAddPatientModal() {
 
 async function savePatient(e) {
     e.preventDefault();
-    if (!db || !currentUser) return;
+    if (!currentUser) return;
     const data = {
         bedNumber: parseInt(document.getElementById('modalBedNumber').value),
         age: parseFloat(document.getElementById('modalAge').value),
@@ -714,7 +676,7 @@ async function savePatient(e) {
         admissionDate: document.getElementById('modalAdmissionDate').value,
         admissionWeight: parseFloat(document.getElementById('modalWeight').value),
         active: true,
-        createdAt: new Date().toISOString()
+        createdAt: new Date()
     };
     try {
         await db.collection('patients').add(data);
@@ -727,7 +689,6 @@ async function savePatient(e) {
 
 async function deletePatient(id) {
     if (!confirm('Delete?')) return;
-    if (!db) return;
     try {
         await db.collection('patients').doc(id).update({ active: false });
         await loadAllPatients();
@@ -756,7 +717,7 @@ function viewPatientDetail(id) {
     }
 }
 
-// Fluid Balance Functions
+// Fluid Balance
 function addFBInput() {
     const div = document.createElement('div');
     div.className = 'flex gap-10';
@@ -779,7 +740,7 @@ function removeFBDrain(btn) { btn.parentElement.remove(); }
 
 async function addFluidBalance(e) {
     e.preventDefault();
-    if (!db || !currentUser || !currentPatientId) return;
+    if (!currentPatientId) return;
     const fbDate = document.getElementById('fbDate').value;
     const admWt = parseFloat(document.getElementById('fbAdmissionWeight').value);
     let totalIn = 0;
@@ -811,7 +772,7 @@ async function addFluidBalance(e) {
 }
 
 async function loadPatientFluidBalance() {
-    if (!db || !currentPatientId) return;
+    if (!currentPatientId) return;
     try {
         const snap = await db.collection('patients').doc(currentPatientId).collection('fluidBalance').get();
         const tbody = document.getElementById('fbTableBody');
@@ -826,7 +787,7 @@ async function loadPatientFluidBalance() {
     } catch (e) { console.error(e); }
 }
 
-// Drug functions
+// Drugs
 function getDefaultDrugLibrary() {
     return [
         { name: 'Morphine', dosePerKg: '0.1 mg/kg', maxDose: '10 mg', frequency: '4-6h', route: 'IV/SC' },
@@ -839,9 +800,9 @@ function getDefaultDrugLibrary() {
 }
 
 async function loadDrugLibrary() {
-    if (!db || !currentUser) return;
+    if (!currentUser) return;
     try {
-        const snap = await db.collection('settings/admin/drugs').get();
+        const snap = await db.collection('drugs').get();
         drugLibrary = [];
         snap.forEach(doc => drugLibrary.push({ id: doc.id, ...doc.data() }));
     } catch (e) {
@@ -866,7 +827,7 @@ function loadDrugSelectOptions() {
 
 async function addDrug(e) {
     e.preventDefault();
-    if (!db || !currentPatientId) return;
+    if (!currentPatientId) return;
     const drugName = document.getElementById('drugName').value;
     const startDate = document.getElementById('drugStartDate').value;
     const drug = (drugLibrary.length > 0 ? drugLibrary : getDefaultDrugLibrary()).find(d => d.name === drugName);
@@ -883,7 +844,7 @@ async function addDrug(e) {
 }
 
 async function loadPatientDrugs() {
-    if (!db || !currentPatientId) return;
+    if (!currentPatientId) return;
     try {
         const snap = await db.collection('patients').doc(currentPatientId).collection('drugs').get();
         const tbody = document.getElementById('drugTableBody');
@@ -897,7 +858,7 @@ async function loadPatientDrugs() {
     } catch (e) { console.error(e); }
 }
 
-// Lab Investigation functions
+// Labs
 function addLabTest() {
     const div = document.createElement('div');
     div.className = 'flex gap-10';
@@ -910,7 +871,7 @@ function removeLabTest(btn) { btn.parentElement.remove(); }
 
 async function addInvestigation(e) {
     e.preventDefault();
-    if (!db || !currentPatientId) return;
+    if (!currentPatientId) return;
     const invDate = document.getElementById('invDate').value;
     const labVals = {};
     document.querySelectorAll('.labTestName').forEach((elem, idx) => {
@@ -929,7 +890,7 @@ async function addInvestigation(e) {
 }
 
 async function loadPatientInvestigations() {
-    if (!db || !currentPatientId) return;
+    if (!currentPatientId) return;
     try {
         const snap = await db.collection('patients').doc(currentPatientId).collection('investigations').get();
         const tbody = document.getElementById('invTableBody');
@@ -945,10 +906,10 @@ async function loadPatientInvestigations() {
     } catch (e) { console.error(e); }
 }
 
-// Image functions
+// Images
 async function uploadImage(e) {
     e.preventDefault();
-    if (!db || !storage || !currentPatientId) return;
+    if (!currentPatientId) return;
     const file = document.getElementById('imageFile').files[0];
     if (!file) return;
     if (file.size > 500000) { alert('File too large'); return; }
@@ -969,7 +930,7 @@ async function uploadImage(e) {
 }
 
 async function loadPatientImages() {
-    if (!db || !currentPatientId) return;
+    if (!currentPatientId) return;
     try {
         const snap = await db.collection('patients').doc(currentPatientId).collection('images').get();
         const cont = document.getElementById('imagesContainer');
@@ -984,10 +945,10 @@ async function loadPatientImages() {
     } catch (e) { console.error(e); }
 }
 
-// Notes functions
+// Notes
 async function addClinicalNote(e) {
     e.preventDefault();
-    if (!db || !currentPatientId) return;
+    if (!currentPatientId) return;
     const text = document.getElementById('noteText').value;
     try {
         await db.collection('patients').doc(currentPatientId).collection('notes').add({
@@ -1000,7 +961,7 @@ async function addClinicalNote(e) {
 }
 
 async function loadPatientNotes() {
-    if (!db || !currentPatientId) return;
+    if (!currentPatientId) return;
     try {
         const snap = await db.collection('patients').doc(currentPatientId).collection('notes').get();
         const cont = document.getElementById('notesContainer');
@@ -1016,7 +977,7 @@ async function loadPatientNotes() {
     } catch (e) { console.error(e); }
 }
 
-// Calculator: Fluid Balance & ISL
+// Calculators
 function calculateISL(age, wt, temp, vent, crrt) {
     let base = 0;
     if (age < 0.083) base = 50;
@@ -1157,10 +1118,9 @@ function calcPALSFunc(e) {
 
 // Education
 async function loadEducationData() {
-    if (!db) return;
     try {
         const doc = await db.collection('settings').doc('education').get();
-        if (doc.exists) educationData = doc.data();
+        if (doc.exists) { /* use doc.data() */ }
     } catch (e) { console.error(e); }
     displayVideos();
     displayTeachingNotes();
@@ -1249,7 +1209,6 @@ function loadExportPatientSelect() {
 }
 
 async function exportAllData() {
-    if (!db) { alert('Firebase not setup'); return; }
     const wb = XLSX.utils.book_new();
     const data = allPatients.map(p => ({ 'Bed': p.bedNumber, 'Age': p.age, 'Weight': p.weight, 'Diagnosis': p.diagnosis, 'Admission': p.admissionDate }));
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), 'Patients');
@@ -1271,7 +1230,7 @@ async function exportPatientData() {
 
 // Admin
 async function loadAdminSettings() {
-    if (!db || !currentUser) return;
+    if (!currentUser) return;
     try {
         const doc = await db.collection('settings').doc('admin').get();
         if (doc.exists) adminSettings = { ...adminSettings, ...doc.data() };
@@ -1291,7 +1250,7 @@ async function loadAdminSettings() {
 
 async function saveAdminProfile(e) {
     e.preventDefault();
-    if (!db || !currentUser) return;
+    if (!currentUser) return;
     const newPass = document.getElementById('adminNewPassword').value;
     adminSettings.doctorName = document.getElementById('adminDoctorName').value;
     adminSettings.designation = document.getElementById('adminDesignation').value;
@@ -1313,7 +1272,6 @@ async function saveAdminProfile(e) {
 
 async function saveAdminPICU(e) {
     e.preventDefault();
-    if (!db) return;
     adminSettings.hospital = document.getElementById('adminHospital').value;
     adminSettings.unitName = document.getElementById('adminUnitName').value;
     adminSettings.beds = parseInt(document.getElementById('adminBeds').value);
@@ -1335,7 +1293,6 @@ function loadDrugLibraryForAdmin() {
 
 async function addDrugToLibrary(e) {
     e.preventDefault();
-    if (!db) return;
     const drug = {
         name: document.getElementById('drugLibraryName').value,
         dosePerKg: document.getElementById('drugLibraryDose').value,
@@ -1356,7 +1313,6 @@ async function addDrugToLibrary(e) {
 
 async function deleteDrugFromLibrary(idx) {
     if (!confirm('Delete?')) return;
-    if (!db) return;
     adminSettings.drugs.splice(idx, 1);
     try {
         await db.collection('settings').doc('admin').set(adminSettings, { merge: true });
@@ -1379,7 +1335,6 @@ function loadVideosForAdmin() {
 
 async function addEducationVideo(e) {
     e.preventDefault();
-    if (!db) return;
     const video = {
         title: document.getElementById('videoTitle').value,
         youtubeId: document.getElementById('youtubeId').value,
@@ -1398,7 +1353,6 @@ async function addEducationVideo(e) {
 
 async function deleteVideo(idx) {
     if (!confirm('Delete?')) return;
-    if (!db) return;
     adminSettings.videos.splice(idx, 1);
     try {
         await db.collection('settings').doc('admin').set(adminSettings, { merge: true });
@@ -1417,7 +1371,6 @@ function loadSocialMediaForAdmin() {
 
 async function saveSocialMedia(e) {
     e.preventDefault();
-    if (!db) return;
     adminSettings.socialMedia = {
         youtube: document.getElementById('smYoutube').value,
         facebook: document.getElementById('smFacebook').value,
@@ -1445,7 +1398,6 @@ function loadTeachingNotesForAdmin() {
 
 async function addTeachingNote(e) {
     e.preventDefault();
-    if (!db) return;
     const note = {
         title: document.getElementById('noteTitle').value,
         content: document.getElementById('noteContent').value,
@@ -1464,7 +1416,6 @@ async function addTeachingNote(e) {
 
 async function deleteTeachingNote(idx) {
     if (!confirm('Delete?')) return;
-    if (!db) return;
     adminSettings.teachingNotes.splice(idx, 1);
     try {
         await db.collection('settings').doc('admin').set(adminSettings, { merge: true });
@@ -1488,7 +1439,6 @@ function loadMCQsForAdmin() {
 
 async function addMCQ(e) {
     e.preventDefault();
-    if (!db) return;
     const mcq = {
         question: document.getElementById('mcqQuestion').value,
         options: [
@@ -1513,7 +1463,6 @@ async function addMCQ(e) {
 
 async function deleteMCQ(idx) {
     if (!confirm('Delete?')) return;
-    if (!db) return;
     adminSettings.mcqs.splice(idx, 1);
     try {
         await db.collection('settings').doc('admin').set(adminSettings, { merge: true });
@@ -1522,6 +1471,7 @@ async function deleteMCQ(idx) {
     } catch (e) { console.error(e); }
 }
 
+// Main load
 async function loadAllData() {
     if (!currentUser) return;
     await Promise.all([
@@ -1537,8 +1487,8 @@ async function loadAllData() {
     });
 }
 
+// Startup
 window.addEventListener('DOMContentLoaded', () => {
-    initFirebase();
     const today = new Date().toISOString().split('T')[0];
     ['fbDate', 'invDate', 'drugStartDate'].forEach(id => {
         const e = document.getElementById(id);
@@ -1548,3 +1498,5 @@ window.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 </html>
+
+
