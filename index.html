@@ -1103,6 +1103,14 @@ const auth = firebase.auth();
 let currentUser = null, currentPtId = null;
 let allPts = [], drugLib = [];
 let mcqAnswers = {};
+// SECURITY: Admin email whitelist - Only these accounts can access Admin Panel
+const ADMIN_EMAILS = [
+  'yashodhapathak@pahs.edu.np',
+  'alinadevbhandari@pahs.edu.np',
+  'thisispratha@gmail.com'
+  // Add more authorized admin emails here
+];
+
 let appSettings = {
   doctorName:'Dr Prakash Thapa', designation:'Pediatric Intensivist',
   hospital:'Patan Academy of Health Sciences, Nepal',
@@ -1146,6 +1154,13 @@ function showPrivateApp(user){
   document.getElementById('topName').textContent=n;
   document.getElementById('sAvatar').textContent=(n[0]||'D').toUpperCase();
   document.getElementById('dashDate').textContent='Today: '+new Date().toLocaleDateString('en-GB',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  
+  // SECURITY: Show/hide admin panel button based on authorization
+  const adminButtons = document.querySelectorAll('[data-sec="admin"]');
+  const isAdmin = isCurrentUserAdmin();
+  adminButtons.forEach(btn => {
+    btn.style.display = isAdmin ? 'flex' : 'none';
+  });
 }
 
 function doLogin(e){
@@ -1213,6 +1228,12 @@ function swPubTab(tab,btn){
 }
 
 function showSec(name,el){
+  // SECURITY: Check if trying to access admin panel
+  if(name==='admin' && !isCurrentUserAdmin()){
+    alert('⚠️ Access Denied: Only authorized administrators can access the Admin Panel.\n\nContact your PICU Director for admin access.');
+    return;
+  }
+  
   document.querySelectorAll('#privateApp .section').forEach(s=>s.classList.remove('active'));
   document.getElementById('sec-'+name).classList.add('active');
   document.querySelectorAll('.nav-item,.mob-item').forEach(b=>b.classList.remove('active'));
@@ -1225,6 +1246,12 @@ function showSec(name,el){
   closeSidebar();
   if(name==='patients'){ document.getElementById('ptListView').classList.remove('hidden'); document.getElementById('ptDetailView').classList.add('hidden'); }
   if(name==='calculators') goCalcHome();
+}
+
+// SECURITY: Check if current user is admin
+function isCurrentUserAdmin(){
+  if(!currentUser) return false;
+  return ADMIN_EMAILS.includes(currentUser.email);
 }
 
 function openSidebar(){ document.getElementById('sidebar').classList.add('open'); document.getElementById('sov').classList.add('open'); }
