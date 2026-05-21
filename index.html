@@ -1189,9 +1189,7 @@ tbody tr:hover{background:#f8fafc}
       </div>
 
       <!-- ── EXPORT ── -->
-      // ═══════════════════════════════════════════
-//  EXPORT
-// ═══════════════════════════════════════════
+  
 function fillExpSelect(){
   const el=document.getElementById('expPtSel'); if(!el)return;
   el.innerHTML='<option value="">Select patient…</option>'+allPts.map(p=>`<option value="${p.id}">Bed ${p.bedNumber} — ${p.diagnosis}</option>`).join('');
