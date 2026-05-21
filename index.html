@@ -1189,30 +1189,89 @@ tbody tr:hover{background:#f8fafc}
       </div>
 
       <!-- ── EXPORT ── -->
-      <div id="sec-export" class="section">
-        <div class="section-hd"><h2>Export Centre</h2><p>Download patient data as Excel files</p></div>
-        <div style="display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">
-          <div class="card"><div class="card-head"><h3>📊 All Patients</h3></div>
-            <div class="card-body"><p class="text-muted" style="margin-bottom:18px">Exports all active patients with basic info</p>
-              <button class="btn btn-primary btn-block" onclick="exportAll()">Export All (Excel)</button></div>
-          </div>
-          <div class="card"><div class="card-head"><h3>👤 Single Patient</h3></div>
-            <div class="card-body">
-              <div class="fg"><label>Select Patient</label><select id="expPtSel"><option>Loading…</option></select></div>
-              <button class="btn btn-blue btn-block" onclick="exportSingle()">Export Patient Data</button>
-            </div>
-          </div>
-          <div class="card"><div class="card-head"><h3>📅 Date Range</h3></div>
-            <div class="card-body">
-              <div class="frow">
-                <div class="fg"><label>From</label><input type="date" id="expFrom"></div>
-                <div class="fg"><label>To</label><input type="date" id="expTo"></div>
-              </div>
-              <button class="btn btn-teal btn-block" onclick="exportRange()">Export Range</button>
-            </div>
-          </div>
-        </div>
-      </div>
+      // ═══════════════════════════════════════════
+//  EXPORT
+// ═══════════════════════════════════════════
+function fillExpSelect(){
+  const el=document.getElementById('expPtSel'); if(!el)return;
+  el.innerHTML='<option value="">Select patient…</option>'+allPts.map(p=>`<option value="${p.id}">Bed ${p.bedNumber} — ${p.diagnosis}</option>`).join('');
+}
+
+async function exportAll(){
+  try {
+    if (!allPts || allPts.length === 0) {
+      alert('No active patients to export.');
+      return;
+    }
+    const wb=XLSX.utils.book_new();
+    const data = allPts.map(p=>({
+      'Bed':p.bedNumber,
+      'Age (yr)':p.age,
+      'Weight (kg)':p.weight,
+      'Adm.Wt (kg)':p.admissionWeight,
+      'Diagnosis':p.diagnosis,
+      'Admitted':p.admissionDate,
+      'Latest FO%':p.latestFO||0
+    }));
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(data),'Patients');
+    XLSX.writeFile(wb,`OurPICU_All_${today()}.xlsx`);
+  } catch (error) {
+    alert('Export Failed: ' + error.message);
+  }
+}
+
+async function exportSingle(){
+  try {
+    const pid=document.getElementById('expPtSel').value; 
+    if(!pid){alert('Select a patient from the dropdown.');return;}
+    const p=allPts.find(x=>x.id===pid); 
+    if(!p){alert('Patient not found in active list.');return;}
+    
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet([{'Bed':p.bedNumber,'Age':p.age,'Weight':p.weight,'Adm.Weight':p.admissionWeight,'Diagnosis':p.diagnosis,'Admitted':p.admissionDate}]),'Patient Info');
+    
+    const fb=await db.collection('patients').doc(pid).collection('fluidBalance').orderBy('date').get();
+    if(!fb.empty) XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(fb.docs.map(d=>({Date:d.data().date,Input:d.data().totalInput,Output:d.data().totalOutput,Net:d.data().netBalance,'ISL(mL)':d.data().islDaily,'FO%':d.data().fluidOverloadPercent,Status:d.data().foStatus}))),'Fluid Balance');
+    
+    const inv=await db.collection('patients').doc(pid).collection('investigations').get();
+    const irows=[];
+    inv.docs.forEach(d=>{Object.entries(d.data().labValues||{}).forEach(([t,v])=>irows.push({Date:d.data().date,Test:t,Value:v.value,Unit:v.unit||''}))});
+    if(irows.length) XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(irows),'Investigations');
+    
+    const dr=await db.collection('patients').doc(pid).collection('drugs').get();
+    if(!dr.empty) XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(dr.docs.map(d=>({Drug:d.data().drugName,'Dose/kg':d.data().dosePerKg,Max:d.data().maxDose,Freq:d.data().frequency,Route:d.data().route,Start:d.data().startDate}))),'Drugs');
+    
+    // Clean filename to prevent the OS from blocking the download due to illegal characters
+    const safeDiag = (p.diagnosis || 'Unknown').replace(/[^a-zA-Z0-9-_]/g, '_');
+    XLSX.writeFile(wb,`Bed${p.bedNumber}_${safeDiag}_${today()}.xlsx`);
+  } catch (error) {
+    alert('Export Failed: ' + error.message);
+  }
+}
+
+async function exportRange(){
+  try {
+    const from=document.getElementById('expFrom').value, to=document.getElementById('expTo').value;
+    if(!from||!to){alert('Please select both a From and To date.');return;}
+    if(!allPts || allPts.length === 0){alert('No patients available to search.');return;}
+    
+    const wb=XLSX.utils.book_new();
+    const allFB=[];
+    
+    for(const p of allPts){
+      const snap=await db.collection('patients').doc(p.id).collection('fluidBalance').where('date','>=',from).where('date','<=',to).get();
+      snap.docs.forEach(d=>allFB.push({Bed:p.bedNumber,Diagnosis:p.diagnosis,Date:d.data().date,Input:d.data().totalInput,Output:d.data().totalOutput,Net:d.data().netBalance,'ISL(mL)':d.data().islDaily,'FO%':d.data().fluidOverloadPercent,Status:d.data().foStatus}));
+    }
+    
+    // Prevent SheetJS from crashing if the date range is completely empty
+    const sheetData = allFB.length > 0 ? allFB : [{ Note: 'No fluid balance data found in this date range.' }];
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(sheetData),'Fluid Balance');
+    
+    XLSX.writeFile(wb,`OurPICU_${from}_to_${to}.xlsx`);
+  } catch(error) {
+    alert('Export Failed: ' + error.message);
+  }
+}
 
       <!-- ── ADMIN ── -->
       <div id="sec-admin" class="section">
