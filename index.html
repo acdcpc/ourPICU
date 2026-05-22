@@ -9,7 +9,13 @@
 <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-storage-compat.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script>
+// Fallback: if SheetJS CDN fails, load from unpkg
+if(typeof XLSX === 'undefined'){
+  document.write('<scr'+'ipt src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"><\/scr'+'ipt>');
+}
+</script>
 <style>
 :root{
   --navy:#1B3A5C;--blue:#2E6DA4;--teal:#0F6E56;--bg:#F0F4F8;
@@ -2357,30 +2363,22 @@ function fillExpSelect(){
 
 function xlsxDownload(wb, filename){
   try {
-    // Use writeFile first (works in most environments)
     XLSX.writeFile(wb, filename);
   } catch(e){
-    // Fallback: manual blob download (works on GitHub Pages / strict browsers)
-    try {
-      const wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
-      const blob = new Blob([wbout], {type:'application/octet-stream'});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
-    } catch(e2){
-      alert('❌ Download failed: ' + e2.message + '\nTry a different browser.');
-    }
+    const wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
+    const blob = new Blob([wbout], {type:'application/octet-stream'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
   }
 }
 
 async function exportAll(){
   try {
     if(!allPts || allPts.length === 0){
-      alert('⚠️ No active patients found. Make sure you are logged in and have active patient records.');
+      alert('⚠️ No active patients found to export. Please ensure you are logged in and have active patient records.');
       return;
     }
     const wb=XLSX.utils.book_new();
@@ -2393,8 +2391,8 @@ async function exportAll(){
       'Admitted': p.admissionDate || '',
       'Latest FO%': p.latestFO || 0
     }));
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Patients');
-    xlsxDownload(wb, `OurPICU_All_Patients_${today()}.xlsx`);
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Patients');
+    xlsxDownload(wb,`OurPICU_All_Patients_${today()}.xlsx`);
   } catch(err) {
     alert('❌ Export Error: ' + err.message);
   }
@@ -2521,7 +2519,7 @@ async function exportRange(){
       XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(allFB),'Fluid Balance');
     }
     
-    xlsxDownload(wb, `OurPICU_Range_${from}_to_${to}.xlsx`);
+    xlsxDownload(wb,`OurPICU_Range_${from}_to_${to}.xlsx`);
   } catch(err) {
     alert('❌ Range Export Error: ' + err.message);
   }
