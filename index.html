@@ -329,6 +329,8 @@ tbody tr:hover{background:#f8fafc}
   .calc-grid{grid-template-columns:1fr 1fr}
   .bed-grid{grid-template-columns:1fr 1fr}
 }
+
+.ptctpane{display:none !important}.ptctpane.active{display:block !important}
 </style>
 </head>
 <body>
@@ -549,6 +551,7 @@ tbody tr:hover{background:#f8fafc}
             <button class="tbtn" onclick="swPtTab('labs',this)">🔬 Investigations</button>
             <button class="tbtn" onclick="swPtTab('images',this)">🖼 Images</button>
             <button class="tbtn" onclick="swPtTab('notes',this)">📝 Notes</button>
+            <button class="tbtn" onclick="swPtTab('calcs',this)">🧮 Calculators</button>
           </div>
 
           <!-- FLUID TAB -->
@@ -692,6 +695,284 @@ tbody tr:hover{background:#f8fafc}
               <div id="notesTimeline"></div>
             </div>
           </div>
+
+          <!-- CALCULATORS TAB (per-patient) -->
+          <div id="pt-calcs" class="tpane">
+            <div class="tabs" style="margin-bottom:18px" id="ptCalcTabs">
+              <button class="tbtn active" onclick="swPtCalcTab('vexus',this)">🫀 VeExUSPI</button>
+              <button class="tbtn" onclick="swPtCalcTab('prism',this)">📊 PRISM-IV</button>
+              <button class="tbtn" onclick="swPtCalcTab('phoenix',this)">🔥 Phoenix</button>
+              <button class="tbtn" onclick="swPtCalcTab('history',this)">📋 Saved Results</button>
+            </div>
+
+            <!-- VeExUSPI sub-tab -->
+            <div id="ptc-vexus" class="ptctpane active">
+              <div class="section-hd" style="margin-bottom:18px"><h3>🫀 VeExUSPI Proforma</h3>
+                <p id="ptc-pt-info" style="color:var(--teal);font-weight:600"></p>
+              </div>
+              <div style="display:grid;gap:18px;grid-template-columns:1fr 1fr">
+                <div class="card"><div class="card-head"><h3>Patient &amp; Clinical Data</h3></div>
+                  <div class="card-body">
+                    <div class="frow">
+                      <div class="fg"><label>Proforma No.</label><input type="text" id="ptcProforma" placeholder="e.g. 001"></div>
+                      <div class="fg"><label>EG No.</label><input type="text" id="ptcEG"></div>
+                    </div>
+                    <div class="frow">
+                      <div class="fg"><label>Date of Admission</label><input type="date" id="ptcAdmDate"></div>
+                      <div class="fg"><label>Date of Enrolment</label><input type="date" id="ptcEnrolDate"></div>
+                    </div>
+                    <div class="fg"><label>Full Diagnosis</label><input type="text" id="ptcDiag" placeholder="Enter full diagnosis"></div>
+                    <div class="divider"></div>
+                    <div style="font-weight:700;font-size:12.5px;color:var(--navy);margin-bottom:10px">Demographics (auto-filled from patient)</div>
+                    <div class="frow">
+                      <div class="fg"><label>Age</label><input type="text" id="ptcAge" placeholder="e.g. 2 years"></div>
+                      <div class="fg"><label>Sex</label><select id="ptcSex"><option value="Male">Male</option><option value="Female">Female</option></select></div>
+                    </div>
+                    <div class="frow">
+                      <div class="fg"><label>Weight (kg)</label><input type="number" id="ptcWt" step=".1"></div>
+                      <div class="fg"><label>Height (cm)</label><input type="number" id="ptcHt" step=".1"></div>
+                    </div>
+                    <div class="divider"></div>
+                    <div style="font-weight:700;font-size:12.5px;color:var(--navy);margin-bottom:10px">Vital Signs at Admission</div>
+                    <div class="frow">
+                      <div class="fg"><label>Heart Rate (bpm)</label><input type="number" id="ptcHR"></div>
+                      <div class="fg"><label>Blood Pressure (mmHg)</label><input type="text" id="ptcBP" placeholder="e.g. 90/60"></div>
+                    </div>
+                    <div class="frow">
+                      <div class="fg"><label>Respiratory Rate (/min)</label><input type="number" id="ptcRR"></div>
+                      <div class="fg"><label>Temperature (°F)</label><input type="number" id="ptcTempF" step=".1"></div>
+                    </div>
+                    <div class="frow">
+                      <div class="fg"><label>SpO₂ (%)</label><input type="number" id="ptcSpo2" min="0" max="100"></div>
+                      <div class="fg"><label>PICU LOS (days)</label><input type="number" id="ptcLOS" step=".1"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <div class="card" style="margin-bottom:18px"><div class="card-head"><h3>Perfusion Index &amp; Scoring</h3></div>
+                    <div class="card-body">
+                      <div class="frow">
+                        <div class="fg"><label>Perfusion Index at 0 hr</label><input type="number" id="ptcPI0" step=".01" placeholder="e.g. 1.5"></div>
+                        <div class="fg"><label>Perfusion Index at 6 hr</label><input type="number" id="ptcPI6" step=".01" placeholder="e.g. 2.0"></div>
+                      </div>
+                      <div class="fg"><label>PRISM IV Score</label><input type="number" id="ptcPRISM"></div>
+                      <div class="fg"><label>Outcome</label><select id="ptcOutcome"><option value="Survived">Survived</option><option value="Non-Survived">Non-Survived</option></select></div>
+                    </div>
+                  </div>
+
+                  <div class="card" style="margin-bottom:18px"><div class="card-head"><h3>Diagnosis Category</h3></div>
+                    <div class="card-body">
+                      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
+                        <label style="display:flex;align-items:center;gap:8px;font-size:13.5px"><input type="checkbox" id="ptcSepsis"> Sepsis/Septic shock</label>
+                        <label style="display:flex;align-items:center;gap:8px;font-size:13.5px"><input type="checkbox" id="ptcPneumonia"> Pneumonia/Resp infection</label>
+                        <label style="display:flex;align-items:center;gap:8px;font-size:13.5px"><input type="checkbox" id="ptcCNS"> CNS infection</label>
+                        <label style="display:flex;align-items:center;gap:8px;font-size:13.5px"><input type="checkbox" id="ptcCHD"> Congenital heart disease</label>
+                        <label style="display:flex;align-items:center;gap:8px;font-size:13.5px"><input type="checkbox" id="ptcRenal"> Renal failure</label>
+                        <label style="display:flex;align-items:center;gap:8px;font-size:13.5px"><input type="checkbox" id="ptcMalig"> Malignancy/Oncology</label>
+                        <label style="display:flex;align-items:center;gap:8px;font-size:13.5px"><input type="checkbox" id="ptcPostop"> Post-operative</label>
+                        <label style="display:flex;align-items:center;gap:8px;font-size:13.5px"><input type="checkbox" id="ptcOther"> Others</label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="card" style="margin-bottom:18px"><div class="card-head"><h3>VeExUS Grading</h3></div>
+                    <div class="card-body">
+                      <div class="fg"><label>VeExUS Grade</label>
+                        <select id="ptcGrade">
+                          <option value="0">Grade 0 — IVC:Ao &lt;1, normal hepatic/portal</option>
+                          <option value="1">Grade 1 — IVC:Ao ≥1, normal hepatic/portal</option>
+                          <option value="2">Grade 2 — IVC:Ao ≥1 + one abnormal</option>
+                          <option value="3">Grade 3 — IVC:Ao ≥1 + two or more abnormal</option>
+                        </select>
+                      </div>
+                      <div class="fg"><label>IVC:Ao Diameter Ratio</label>
+                        <select id="ptcIVCAo"><option value="≥1">≥1 (Dilated)</option><option value="<1">&lt;1 (Normal)</option></select>
+                      </div>
+                      <div class="fg"><label>Hepatic Vein Pattern</label>
+                        <select id="ptcHepatic">
+                          <option value="S>D">S &gt; D (Normal)</option>
+                          <option value="D>S">D &gt; S (Mildly abnormal)</option>
+                          <option value="Flat/Retrograde S">Flat or Retrograde S (Severely abnormal)</option>
+                        </select>
+                      </div>
+                      <div class="fg"><label>Portal Vein Pulsatility</label>
+                        <select id="ptcPortal">
+                          <option value="No pulsatility">No pulsatility (Normal)</option>
+                          <option value="Moderate pulsatility">Moderate pulsatility</option>
+                          <option value="Severe pulsatility">Severe pulsatility</option>
+                        </select>
+                      </div>
+                      <div class="fg"><label>Intrarenal Veins Pattern</label>
+                        <select id="ptcRenal2">
+                          <option value="Uninterrupted">Uninterrupted (Normal)</option>
+                          <option value="Short interruptions">Short interruptions</option>
+                          <option value="Only D waves present">Only D waves present (Severely abnormal)</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="card"><div class="card-head"><h3>Renal Markers (AKI)</h3></div>
+                    <div class="card-body">
+                      <div class="frow">
+                        <div class="fg"><label>Creatinine at Admission (mg/dL)</label><input type="number" id="ptcCr0" step=".01"></div>
+                        <div class="fg"><label>Creatinine at 24h (mg/dL)</label><input type="number" id="ptcCr24" step=".01"></div>
+                      </div>
+                      <div class="fg"><label>Urine Output (mL/kg/hr — avg 6–24h)</label><input type="number" id="ptcUO" step=".01"></div>
+                      <div class="fg"><label>AKI Present (KDIGO)?</label>
+                        <select id="ptcAKI"><option value="No">No</option><option value="Yes">Yes</option></select>
+                      </div>
+                      <div class="fg"><label>KDIGO AKI Stage</label>
+                        <select id="ptcAKIStage"><option value="0">Stage 0 (No AKI)</option><option value="1">Stage 1</option><option value="2">Stage 2</option><option value="3">Stage 3</option></select>
+                      </div>
+                      <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">
+                        <button type="button" class="btn btn-teal" onclick="previewPtVeExUS()">🔍 Preview Proforma</button>
+                        <button type="button" class="btn btn-primary" onclick="savePtVeExUS()">💾 Save to This Patient</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div id="ptcVexusPreview" class="hidden" style="margin-top:22px"></div>
+            </div>
+
+            <!-- PRISM-IV sub-tab -->
+            <div id="ptc-prism" class="ptctpane hidden">
+              <div class="section-hd" style="margin-bottom:18px"><h3>📊 PRISM-IV Score</h3>
+                <p style="color:var(--teal);font-weight:600" id="ptcPrismInfo"></p>
+              </div>
+              <div class="card">
+                <div class="card-head"><h3>PRISM-IV Inputs</h3></div>
+                <div class="card-body">
+                  <form onsubmit="calcPtPRISM(event)">
+                    <div class="frow">
+                      <div class="fg"><label>Age (months)</label><input type="number" id="ptcPrismAge" placeholder="e.g. 24" required></div>
+                      <div class="fg"><label>Post-op Cardiac?</label><select id="ptcPrismCardiac"><option value="0">No</option><option value="1">Yes</option></select></div>
+                    </div>
+                    <div class="frow">
+                      <div class="fg"><label>Systolic BP (mmHg)</label><input type="number" id="ptcPrismSBP" required></div>
+                      <div class="fg"><label>Heart Rate (bpm)</label><input type="number" id="ptcPrismHR" required></div>
+                    </div>
+                    <div class="frow">
+                      <div class="fg"><label>GCS</label><input type="number" id="ptcPrismGCS" min="3" max="15" value="15"></div>
+                      <div class="fg"><label>Pupils</label>
+                        <select id="ptcPrismPupils">
+                          <option value="0">Equal &amp; reactive</option>
+                          <option value="11">Unequal / one fixed</option>
+                          <option value="7">Both fixed &amp; dilated</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="frow">
+                      <div class="fg"><label>pH</label><input type="number" id="ptcPrismPH" step=".01" placeholder="7.35–7.45"></div>
+                      <div class="fg"><label>Total CO₂ (mEq/L)</label><input type="number" id="ptcPrismCO2" step=".1"></div>
+                    </div>
+                    <div class="frow">
+                      <div class="fg"><label>PaO₂ (mmHg)</label><input type="number" id="ptcPrismPaO2"></div>
+                      <div class="fg"><label>PCO₂ (mmHg)</label><input type="number" id="ptcPrismPCO2"></div>
+                    </div>
+                    <div class="frow">
+                      <div class="fg"><label>Glucose (mg/dL)</label><input type="number" id="ptcPrismGluc" step=".1"></div>
+                      <div class="fg"><label>K⁺ (mEq/L)</label><input type="number" id="ptcPrismK" step=".1"></div>
+                    </div>
+                    <div class="frow">
+                      <div class="fg"><label>Creatinine (mg/dL)</label><input type="number" id="ptcPrismCr" step=".01"></div>
+                      <div class="fg"><label>BUN (mg/dL)</label><input type="number" id="ptcPrismBUN" step=".1"></div>
+                    </div>
+                    <div class="frow">
+                      <div class="fg"><label>WBC (×10³/µL)</label><input type="number" id="ptcPrismWBC" step=".1"></div>
+                      <div class="fg"><label>Platelets (×10³/µL)</label><input type="number" id="ptcPrismPlt" step=".1"></div>
+                    </div>
+                    <div class="frow">
+                      <div class="fg"><label>PT (sec)</label><input type="number" id="ptcPrismPT" step=".1"></div>
+                      <div class="fg"><label>PTT (sec)</label><input type="number" id="ptcPrismPTT" step=".1"></div>
+                    </div>
+                    <div class="fg"><label>Temperature (°C)</label><input type="number" id="ptcPrismTemp" step=".1" value="37"></div>
+                    <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">
+                      <button type="submit" class="btn btn-primary">Calculate &amp; Save to Patient</button>
+                    </div>
+                  </form>
+                  <div id="ptcPrismResult" class="hidden" style="margin-top:18px"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Phoenix sub-tab -->
+            <div id="ptc-phoenix" class="ptctpane hidden">
+              <div class="section-hd" style="margin-bottom:18px"><h3>🔥 Phoenix Sepsis Score</h3>
+                <p style="color:var(--teal);font-weight:600" id="ptcPhoenixInfo"></p>
+              </div>
+              <div class="card">
+                <div class="card-head"><h3>Phoenix Score Inputs</h3></div>
+                <div class="card-body">
+                  <form onsubmit="calcPtPhoenix(event)">
+                    <div class="fg"><label>Suspected / Confirmed Infection?</label>
+                      <select id="ptcPhxInfection"><option value="1">Yes</option><option value="0">No</option></select>
+                    </div>
+                    <div class="divider"></div>
+                    <div style="font-weight:700;font-size:12.5px;color:var(--navy);margin-bottom:10px">Respiratory (0–3 pts)</div>
+                    <div class="fg"><label>Respiratory Score</label>
+                      <select id="ptcPhxResp">
+                        <option value="0">0 — No respiratory dysfunction</option>
+                        <option value="1">1 — SpO₂:FiO₂ &lt;292 (no IMV) or IMV + SF ≥148</option>
+                        <option value="2">2 — IMV + SF 100–148</option>
+                        <option value="3">3 — IMV + SF &lt;100</option>
+                      </select>
+                    </div>
+                    <div class="divider"></div>
+                    <div style="font-weight:700;font-size:12.5px;color:var(--navy);margin-bottom:10px">Cardiovascular (0–6 pts)</div>
+                    <div class="fg"><label>Lactate Score</label>
+                      <select id="ptcPhxLac">
+                        <option value="0">0 — Lactate ≤2 mmol/L</option>
+                        <option value="1">1 — Lactate 2.1–5 mmol/L</option>
+                        <option value="2">2 — Lactate &gt;5 mmol/L</option>
+                      </select>
+                    </div>
+                    <div class="fg"><label>Vasoactive / MAP Score</label>
+                      <select id="ptcPhxCV">
+                        <option value="0">0 — No vasopressors, MAP normal</option>
+                        <option value="1">1 — 1 vasopressor or MAP below threshold</option>
+                        <option value="2">2 — 1 vasopressor + low MAP</option>
+                        <option value="3">3 — ≥2 vasopressors + low MAP</option>
+                      </select>
+                    </div>
+                    <div class="divider"></div>
+                    <div style="font-weight:700;font-size:12.5px;color:var(--navy);margin-bottom:10px">Coagulation (0–2 pts)</div>
+                    <div class="fg"><label>Coagulation Score</label>
+                      <select id="ptcPhxCoag">
+                        <option value="0">0 — No coagulation dysfunction</option>
+                        <option value="1">1 — One abnormality (Plt&lt;100, INR&gt;1.3, D-dimer&gt;2, or Fib&lt;100)</option>
+                        <option value="2">2 — Two or more abnormalities</option>
+                      </select>
+                    </div>
+                    <div class="divider"></div>
+                    <div style="font-weight:700;font-size:12.5px;color:var(--navy);margin-bottom:10px">Neurological (0–2 pts)</div>
+                    <div class="fg"><label>Neurological Score</label>
+                      <select id="ptcPhxNeuro">
+                        <option value="0">0 — GCS &gt;10, pupils reactive</option>
+                        <option value="1">1 — GCS ≤10</option>
+                        <option value="2">2 — GCS ≤10 or bilateral fixed pupils</option>
+                      </select>
+                    </div>
+                    <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">
+                      <button type="submit" class="btn btn-primary">Calculate &amp; Save to Patient</button>
+                    </div>
+                  </form>
+                  <div id="ptcPhoenixResult" class="hidden" style="margin-top:18px"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Saved Results sub-tab -->
+            <div id="ptc-history" class="ptctpane hidden">
+              <div class="section-hd" style="margin-bottom:18px"><h3>📋 Saved Calculator Results</h3></div>
+              <div id="ptcHistoryWrap">
+                <p class="text-muted" style="padding:20px">Loading saved results…</p>
+              </div>
+            </div>
+
+          </div><!-- /pt-calcs tpane -->
         </div><!-- /ptDetailView -->
       </div><!-- /sec-patients -->
 
@@ -1599,6 +1880,8 @@ function swPtTab(tab,btn){
   document.getElementById('pt-'+tab).classList.add('active');
   document.querySelectorAll('#ptDetailView > .tabs .tbtn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
+
+  if(tab==='calcs') prefillPtCalcs();
 }
 function swAdmTab(tab,btn){
   document.querySelectorAll('#sec-admin > .tpane').forEach(p=>p.classList.remove('active'));
@@ -1934,6 +2217,9 @@ function openPtDetail(id){
   document.getElementById('ptDetailView').classList.remove('hidden');
   loadFBHist(); loadPtDrugs(); loadPtLabs(); loadPtImages(); loadPtNotes();
   fillDrugSelects(); setDates();
+  prefillPtCalcs();
+  // Reset calc tab to first sub-tab
+  swPtCalcTab('vexus', document.querySelector('#ptCalcTabs .tbtn'));
 }
 
 function closePtDetail(){
@@ -2476,25 +2762,54 @@ async function exportSingle(){
     } catch(drErr){ console.error('Drug Export error', drErr); }
 
     try {
-      const vx=await db.collection('patients').doc(pid).collection('vexus').get();
-      if(!vx.empty) {
-        XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(vx.docs.map(d=>{
-          const data = d.data();
-          return {
-            'Saved At': data.savedAt || '',
-            'Saved By': data.savedBy || '',
-            'IVC/Ao Ratio': data.ivcAoRatio || '',
-            'Hepatic Vein Pattern': data.hepVeinPattern || '',
-            'Portal Vein Pulsatility': data.portalVeinPulsatility || '',
-            'Intrarenal Flow': data.intrarenalFlow || '',
-            'VeExUS Grade': data.vexusGrade || '',
-            'Perfusion Index 0hr': data.perfIndex0hr || '',
-            'Perfusion Index 6hr': data.perfIndex6hr || ''
-          };
-        })),'VeExUS Records');
+      const cr=await db.collection('patients').doc(pid).collection('calcResults').orderBy('savedAt').get();
+      if(!cr.empty){
+        const vexRows=[], prismRows=[], phoenixRows=[];
+        cr.docs.forEach(doc=>{
+          const d=doc.data();
+          if(d.type==='vexus') vexRows.push({
+            'Date': d.enrolDate||'', 'EG No.': d.eg||'', 'Proforma No.': d.proformaNo||'',
+            'Diagnosis': d.diag||'', 'Age': d.age||'', 'Sex': d.sex||'',
+            'Weight (kg)': d.wt||'', 'Height (cm)': d.ht||'',
+            'HR': d.hr||'', 'BP': d.bp||'', 'RR': d.rr||'', 'Temp (°F)': d.temp||'', 'SpO2%': d.spo2||'',
+            'LOS (days)': d.los||'', 'PI 0hr': d.pi0||'', 'PI 6hr': d.pi6||'',
+            'PRISM Score': d.prismScore||'', 'Outcome': d.outcome||'',
+            'Diagnosis Categories': d.diagnoses||'',
+            'VeExUS Grade': d.grade||'', 'IVC:Ao': d.ivcAo||'',
+            'Hepatic Vein': d.hepatic||'', 'Portal Vein': d.portal||'', 'Intrarenal': d.renal2||'',
+            'Creatinine Adm': d.cr0||'', 'Creatinine 24h': d.cr24||'',
+            'Urine Output': d.uo||'', 'AKI': d.aki||'', 'AKI Stage': d.akiStage||'',
+            'Saved By': d.savedBy||'', 'Saved At': d.savedAt||''
+          });
+          if(d.type==='prism') prismRows.push({
+            'Date': d.date||'', 'PRISM-IV Score': d.score||0,
+            'Predicted Mortality %': d.predictedMortality||0,
+            'Scored Items': (d.details||[]).join('; '),
+            'Saved By': d.savedBy||'', 'Saved At': d.savedAt||''
+          });
+          if(d.type==='phoenix') phoenixRows.push({
+            'Date': d.date||'', 'Phoenix Total': d.total||0,
+            'Respiratory': d.resp||0, 'Cardiovascular': d.cardio||0,
+            'Coagulation': d.coag||0, 'Neurological': d.neuro||0,
+            'Sepsis': d.sepsis?'Yes':'No', 'Septic Shock': d.septicShock?'Yes':'No',
+            'Diagnosis': d.diagnosis||'',
+            'Saved By': d.savedBy||'', 'Saved At': d.savedAt||''
+          });
+        });
+        if(vexRows.length)    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(vexRows),    'VeExUSPI Proforma');
+        if(prismRows.length)  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(prismRows),  'PRISM-IV Scores');
+        if(phoenixRows.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(phoenixRows),'Phoenix Scores');
       }
-    } catch(vxErr){ console.error('Vexus Export error', vxErr); }
+    } catch(vxErr){ console.error('Calc Results Export error', vxErr); }
     
+    try {
+      const nt=await db.collection('patients').doc(pid).collection('notes').orderBy('timestamp').get();
+      if(!nt.empty) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(nt.docs.map(d=>({
+        'Date': d.data().timestamp?.toDate?.()?.toLocaleDateString('en-GB')||'',
+        'Type': d.data().type||'', 'Note': d.data().text||''
+      }))),'Clinical Notes');
+    } catch(ntErr){ console.error('Notes export error', ntErr); }
+
     const cleanDiag = (p.diagnosis || 'Patient').replace(/[^a-zA-Z0-9-_ ]/g, '_');
     xlsxDownload(wb, `Bed_${p.bedNumber || 'X'}_${cleanDiag}_${today()}.xlsx`);
     
@@ -2949,6 +3264,335 @@ async function saveVeExUS(){
   }catch(er){
     alert('Error saving: '+er.message);
   }
+}
+
+
+// ═══════════════════════════════════════════
+//  PATIENT CALCULATORS TAB
+// ═══════════════════════════════════════════
+function swPtCalcTab(tab, btn){
+  document.querySelectorAll('#pt-calcs .ptctpane').forEach(p=>{
+    p.classList.remove('active');
+    p.style.display='none';
+  });
+  const el = document.getElementById('ptc-'+tab);
+  if(el){ el.classList.add('active'); el.style.display='block'; }
+  document.querySelectorAll('#ptCalcTabs .tbtn').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  if(tab==='history') loadPtCalcHistory();
+}
+
+function prefillPtCalcs(){
+  const p = allPts.find(x=>x.id===currentPtId); if(!p) return;
+  // Pre-fill VeExUSPI demographics
+  if(document.getElementById('ptcAge'))   document.getElementById('ptcAge').value   = p.age ? p.age+' years' : '';
+  if(document.getElementById('ptcSex'))   document.getElementById('ptcSex').value   = p.sex || 'Male';
+  if(document.getElementById('ptcWt'))    document.getElementById('ptcWt').value    = p.weight || '';
+  if(document.getElementById('ptcDiag'))  document.getElementById('ptcDiag').value  = p.diagnosis || '';
+  if(document.getElementById('ptcAdmDate')) document.getElementById('ptcAdmDate').value = p.admissionDate || '';
+  // Update info banners
+  const info = `Patient: Bed ${p.bedNumber} | Age: ${p.age} yr | Weight: ${p.weight} kg | Sex: ${p.sex||'—'} | Dx: ${p.diagnosis}`;
+  ['ptc-pt-info','ptcPrismInfo','ptcPhoenixInfo'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.textContent=info;
+  });
+  // Pre-fill PRISM age in months
+  if(document.getElementById('ptcPrismAge') && p.age){
+    document.getElementById('ptcPrismAge').value = Math.round(parseFloat(p.age)*12)||'';
+  }
+}
+
+function getPtcVeExUSData(){
+  const checks = [];
+  ['ptcSepsis','ptcPneumonia','ptcCNS','ptcCHD','ptcRenal','ptcMalig','ptcPostop','ptcOther'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el&&el.checked) checks.push(el.parentElement.textContent.trim());
+  });
+  return {
+    type:'vexus',
+    proformaNo: document.getElementById('ptcProforma').value||'—',
+    eg:         document.getElementById('ptcEG').value||'—',
+    admDate:    document.getElementById('ptcAdmDate').value||'—',
+    enrolDate:  document.getElementById('ptcEnrolDate').value||'—',
+    diag:       document.getElementById('ptcDiag').value||'—',
+    age:        document.getElementById('ptcAge').value||'—',
+    sex:        document.getElementById('ptcSex').value,
+    wt:         document.getElementById('ptcWt').value||'—',
+    ht:         document.getElementById('ptcHt').value||'—',
+    hr:         document.getElementById('ptcHR').value||'—',
+    bp:         document.getElementById('ptcBP').value||'—',
+    rr:         document.getElementById('ptcRR').value||'—',
+    temp:       document.getElementById('ptcTempF').value||'—',
+    spo2:       document.getElementById('ptcSpo2').value||'—',
+    los:        document.getElementById('ptcLOS').value||'—',
+    pi0:        document.getElementById('ptcPI0').value||'—',
+    pi6:        document.getElementById('ptcPI6').value||'—',
+    prismScore: document.getElementById('ptcPRISM').value||'—',
+    outcome:    document.getElementById('ptcOutcome').value,
+    diagnoses:  checks.join(', ')||'None selected',
+    grade:      document.getElementById('ptcGrade').value,
+    ivcAo:      document.getElementById('ptcIVCAo').value,
+    hepatic:    document.getElementById('ptcHepatic').value,
+    portal:     document.getElementById('ptcPortal').value,
+    renal2:     document.getElementById('ptcRenal2').value,
+    cr0:        document.getElementById('ptcCr0').value||'—',
+    cr24:       document.getElementById('ptcCr24').value||'—',
+    uo:         document.getElementById('ptcUO').value||'—',
+    aki:        document.getElementById('ptcAKI').value,
+    akiStage:   document.getElementById('ptcAKIStage').value,
+  };
+}
+
+function previewPtVeExUS(){
+  const d = getPtcVeExUSData();
+  const preview = document.getElementById('ptcVexusPreview'); if(!preview) return;
+  preview.classList.remove('hidden');
+  preview.innerHTML=`
+    <div class="card">
+      <div class="card-head" style="background:linear-gradient(135deg,var(--navy),var(--teal))">
+        <h3 style="color:#fff">🫀 VeExUSPI Proforma Preview</h3>
+        <span style="color:rgba(255,255,255,.7);font-size:12px">Proforma #${d.proformaNo}</span>
+      </div>
+      <div class="card-body" style="display:grid;gap:18px;grid-template-columns:1fr 1fr">
+        <div>
+          <div style="font-weight:700;font-size:12px;color:var(--navy);margin-bottom:9px">PATIENT INFORMATION</div>
+          <div class="rbox" style="margin-top:0">
+            <div class="rrow"><span class="rlbl">EG No.</span><span class="rval">${d.eg}</span></div>
+            <div class="rrow"><span class="rlbl">Diagnosis</span><span class="rval">${d.diag}</span></div>
+            <div class="rrow"><span class="rlbl">Age / Sex</span><span class="rval">${d.age} / ${d.sex}</span></div>
+            <div class="rrow"><span class="rlbl">Weight / Height</span><span class="rval">${d.wt} kg / ${d.ht} cm</span></div>
+            <div class="rrow"><span class="rlbl">Admission Date</span><span class="rval">${d.admDate}</span></div>
+            <div class="rrow"><span class="rlbl">Enrolment Date</span><span class="rval">${d.enrolDate}</span></div>
+            <div class="rrow"><span class="rlbl">PICU LOS</span><span class="rval">${d.los} days</span></div>
+          </div>
+          <div style="font-weight:700;font-size:12px;color:var(--navy);margin:14px 0 9px">VITAL SIGNS</div>
+          <div class="rbox" style="margin-top:0">
+            <div class="rrow"><span class="rlbl">HR / BP / RR</span><span class="rval">${d.hr} bpm / ${d.bp} mmHg / ${d.rr}/min</span></div>
+            <div class="rrow"><span class="rlbl">Temperature</span><span class="rval">${d.temp} °F</span></div>
+            <div class="rrow"><span class="rlbl">SpO₂</span><span class="rval">${d.spo2}%</span></div>
+          </div>
+          <div style="font-weight:700;font-size:12px;color:var(--navy);margin:14px 0 9px">DIAGNOSIS CATEGORIES</div>
+          <div style="padding:11px 14px;background:var(--bg);border-radius:9px;font-size:13.5px">${d.diagnoses}</div>
+        </div>
+        <div>
+          <div style="font-weight:700;font-size:12px;color:var(--navy);margin-bottom:9px">PERFUSION & SCORING</div>
+          <div class="rbox" style="margin-top:0">
+            <div class="rrow"><span class="rlbl">PI at 0 hr</span><span class="rval">${d.pi0}</span></div>
+            <div class="rrow"><span class="rlbl">PI at 6 hr</span><span class="rval">${d.pi6}</span></div>
+            <div class="rrow"><span class="rlbl">PRISM IV Score</span><span class="rval">${d.prismScore}</span></div>
+            <div class="rrow"><span class="rlbl">Outcome</span><span class="rval"><span class="badge ${d.outcome==='Survived'?'bg-green':'bg-red'}">${d.outcome}</span></span></div>
+          </div>
+          <div style="font-weight:700;font-size:12px;color:var(--navy);margin:14px 0 9px">VeExUS GRADING</div>
+          <div class="rbox" style="margin-top:0">
+            <div class="rrow"><span class="rlbl">Grade</span><span class="rval"><span class="badge bg-blue">Grade ${d.grade}</span></span></div>
+            <div class="rrow"><span class="rlbl">IVC:Ao Ratio</span><span class="rval">${d.ivcAo}</span></div>
+            <div class="rrow"><span class="rlbl">Hepatic Vein</span><span class="rval">${d.hepatic}</span></div>
+            <div class="rrow"><span class="rlbl">Portal Vein</span><span class="rval">${d.portal}</span></div>
+            <div class="rrow"><span class="rlbl">Intrarenal Veins</span><span class="rval">${d.renal2}</span></div>
+          </div>
+          <div style="font-weight:700;font-size:12px;color:var(--navy);margin:14px 0 9px">RENAL MARKERS</div>
+          <div class="rbox" style="margin-top:0">
+            <div class="rrow"><span class="rlbl">Creatinine (adm)</span><span class="rval">${d.cr0} mg/dL</span></div>
+            <div class="rrow"><span class="rlbl">Creatinine (24h)</span><span class="rval">${d.cr24} mg/dL</span></div>
+            <div class="rrow"><span class="rlbl">Urine Output</span><span class="rval">${d.uo} mL/kg/hr</span></div>
+            <div class="rrow"><span class="rlbl">AKI (KDIGO)</span><span class="rval">${d.aki==='Yes'?`<span class="badge bg-red">Yes — Stage ${d.akiStage}</span>`:'<span class="badge bg-green">No</span>'}</span></div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  preview.scrollIntoView({behavior:'smooth'});
+}
+
+async function savePtVeExUS(){
+  if(!currentUser){ alert('Please log in.'); return; }
+  if(!currentPtId){ alert('No patient open.'); return; }
+  const d = getPtcVeExUSData();
+  const record = {...d, savedBy:currentUser.email, savedAt:new Date().toISOString()};
+  try{
+    await db.collection('patients').doc(currentPtId).collection('calcResults').add(record);
+    alert('✅ VeExUSPI proforma saved to this patient record!');
+    document.getElementById('ptcVexusPreview').classList.add('hidden');
+  } catch(er){ alert('Error saving: '+er.message); }
+}
+
+function calcPtPRISM(e){
+  e.preventDefault();
+  const age=parseFloat(document.getElementById('ptcPrismAge').value)||0;
+  const cardiac=parseInt(document.getElementById('ptcPrismCardiac').value)||0;
+  const sbp=parseFloat(document.getElementById('ptcPrismSBP').value)||0;
+  const hr=parseFloat(document.getElementById('ptcPrismHR').value)||0;
+  const temp=parseFloat(document.getElementById('ptcPrismTemp').value)||37;
+  const gcs=parseInt(document.getElementById('ptcPrismGCS').value)||15;
+  const pupils=parseInt(document.getElementById('ptcPrismPupils').value)||0;
+  const ph=parseFloat(document.getElementById('ptcPrismPH').value)||7.4;
+  const tco2=parseFloat(document.getElementById('ptcPrismCO2').value)||0;
+  const pao2=parseFloat(document.getElementById('ptcPrismPaO2').value)||0;
+  const pco2=parseFloat(document.getElementById('ptcPrismPCO2').value)||0;
+  const gluc=parseFloat(document.getElementById('ptcPrismGluc').value)||0;
+  const k=parseFloat(document.getElementById('ptcPrismK').value)||0;
+  const cr=parseFloat(document.getElementById('ptcPrismCr').value)||0;
+  const bun=parseFloat(document.getElementById('ptcPrismBUN').value)||0;
+  const wbc=parseFloat(document.getElementById('ptcPrismWBC').value)||0;
+  const plt=parseFloat(document.getElementById('ptcPrismPlt').value)||0;
+  const pt=parseFloat(document.getElementById('ptcPrismPT').value)||0;
+  const ptt=parseFloat(document.getElementById('ptcPrismPTT').value)||0;
+
+  let score=0; const det=[];
+  const sbpLow=age<12?65:75; const sbpVLow=age<12?55:65;
+  if(sbp<sbpVLow){score+=7;det.push('SBP severely low: +7');}
+  else if(sbp<sbpLow){score+=3;det.push('SBP low: +3');}
+  const hrHigh=age<12?150:150;
+  if(hr>hrHigh){score+=4;det.push('HR high: +4');}
+  if(pupils===11){score+=11;det.push('Unequal pupil: +11');}
+  else if(pupils===7){score+=7;det.push('Fixed/dilated pupils: +7');}
+  if(gcs<=8){score+=6;det.push('GCS ≤8: +6');}
+  if(ph<7.0){score+=6;det.push('pH <7.0: +6');}
+  else if(ph<7.28){score+=2;det.push('pH 7.0–7.28: +2');}
+  if(tco2>34){score+=4;det.push('CO₂ >34: +4');}
+  if(pao2>0&&pao2<42){score+=6;det.push('PaO₂ <42: +6');}
+  else if(pao2>0&&pao2<50){score+=3;det.push('PaO₂ 42–49: +3');}
+  if(pco2>90){score+=1;det.push('PCO₂ >90: +1');}
+  if(gluc>0&&(gluc<40||gluc>400)){score+=6;det.push('Glucose abnormal: +6');}
+  else if(gluc>200){score+=2;det.push('Glucose 200–400: +2');}
+  if(k>6.9){score+=3;det.push('K⁺ >6.9: +3');}
+  if(cr>1.3){score+=2;det.push('Creatinine elevated: +2');}
+  if(bun>14.9){score+=3;det.push('BUN elevated: +3');}
+  if(wbc>0&&wbc<3){score+=4;det.push('WBC <3: +4');}
+  if(plt>0&&plt<100){score+=4;det.push('Plt <100: +4');}
+  else if(plt>0&&plt<200){score+=2;det.push('Plt 100–200: +2');}
+  if(pt>22||ptt>57){score+=3;det.push('PT/PTT prolonged: +3');}
+  if(cardiac){score+=3;det.push('Post-op cardiac: +3');}
+  if(temp>38.6||temp<35.6){score+=3;det.push('Temp abnormal: +3');}
+
+  const logit=-5.776+0.415*score;
+  const mort=Math.round(100/(1+Math.exp(-logit))*10)/10;
+  const ac=mort<5?'alert-success':mort<20?'alert-warn':'alert-danger';
+
+  const html=`<div class="card">
+    <div class="card-head" style="background:linear-gradient(135deg,var(--navy),var(--blue))">
+      <h3 style="color:#fff">📊 PRISM-IV Result</h3>
+    </div>
+    <div class="card-body">
+      <div style="text-align:center;padding:14px 0">
+        <div class="big-num" style="color:var(--navy)">${score}</div>
+        <div style="font-size:13px;color:var(--muted)">PRISM-IV Score</div>
+        <div style="font-size:2rem;font-weight:700;color:var(--danger);margin-top:12px">${mort}%</div>
+        <div style="font-size:13px;color:var(--muted)">Predicted Mortality</div>
+      </div>
+      <div class="alert ${ac}">Score: ${score} | Predicted mortality: ${mort}%</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">
+        ${det.map(d=>`<span class="badge bg-navy">${d}</span>`).join('')||'<span class="text-muted">No scored abnormalities</span>'}
+      </div>
+    </div>
+  </div>`;
+
+  const el=document.getElementById('ptcPrismResult');
+  el.classList.remove('hidden'); el.innerHTML=html;
+
+  // Auto-fill PRISM score into VeExUSPI proforma
+  if(document.getElementById('ptcPRISM')) document.getElementById('ptcPRISM').value=score;
+
+  // Save to patient
+  savePtCalcResult({type:'prism', score, predictedMortality:mort, details:det, date:today()});
+}
+
+function calcPtPhoenix(e){
+  e.preventDefault();
+  const infection=parseInt(document.getElementById('ptcPhxInfection').value)||0;
+  const resp=parseInt(document.getElementById('ptcPhxResp').value)||0;
+  const lac=parseInt(document.getElementById('ptcPhxLac').value)||0;
+  const cv=parseInt(document.getElementById('ptcPhxCV').value)||0;
+  const coag=Math.min(parseInt(document.getElementById('ptcPhxCoag').value)||0,2);
+  const neuro=Math.min(parseInt(document.getElementById('ptcPhxNeuro').value)||0,2);
+  const cardio=Math.min(lac+cv,6);
+  const total=resp+cardio+coag+neuro;
+  const sepsis=infection&&total>=2;
+  const shock=sepsis&&cardio>=1;
+  const statusLabel=!infection?'No infection documented':!sepsis?'No Sepsis (score <2)':shock?'SEPTIC SHOCK':'SEPSIS';
+  const ac=!infection||!sepsis?'alert-warn':shock?'alert-danger':'alert-danger';
+
+  const html=`<div class="card">
+    <div class="card-head" style="background:linear-gradient(135deg,var(--danger),#c0392b)">
+      <h3 style="color:#fff">🔥 Phoenix Sepsis Result</h3>
+    </div>
+    <div class="card-body">
+      <div style="text-align:center;padding:14px 0">
+        <div class="big-num" style="color:${shock?'var(--danger)':!sepsis?'var(--success)':'var(--warn)'}">${total}</div>
+        <div style="font-size:13px;color:var(--muted)">Phoenix Score</div>
+      </div>
+      <div class="alert ${ac}" style="font-weight:600">${statusLabel}</div>
+      <div class="rbox">
+        <div class="rrow"><span class="rlbl">Respiratory</span><span class="rval">${resp}</span></div>
+        <div class="rrow"><span class="rlbl">Cardiovascular (max 6)</span><span class="rval">${cardio}</span></div>
+        <div class="rrow"><span class="rlbl">Coagulation</span><span class="rval">${coag}</span></div>
+        <div class="rrow"><span class="rlbl">Neurological</span><span class="rval">${neuro}</span></div>
+      </div>
+    </div>
+  </div>`;
+
+  const el=document.getElementById('ptcPhoenixResult');
+  el.classList.remove('hidden'); el.innerHTML=html;
+  savePtCalcResult({type:'phoenix', total, resp, cardio, coag, neuro, sepsis:!!sepsis, septicShock:!!shock, diagnosis:statusLabel, date:today()});
+}
+
+async function savePtCalcResult(data){
+  if(!currentUser||!currentPtId) return;
+  try{
+    await db.collection('patients').doc(currentPtId).collection('calcResults').add({
+      ...data, savedBy:currentUser.email, savedAt:new Date().toISOString()
+    });
+  } catch(er){ console.warn('Calc save error:',er.message); }
+}
+
+async function loadPtCalcHistory(){
+  const wrap=document.getElementById('ptcHistoryWrap'); if(!wrap||!currentPtId) return;
+  wrap.innerHTML='<p class="text-muted" style="padding:20px">Loading…</p>';
+  try{
+    const snap=await db.collection('patients').doc(currentPtId).collection('calcResults').orderBy('savedAt','desc').get();
+    if(snap.empty){ wrap.innerHTML='<p class="text-muted" style="padding:20px">No saved calculator results for this patient yet.</p>'; return; }
+    wrap.innerHTML=snap.docs.map(doc=>{
+      const d=doc.data();
+      if(d.type==='prism') return `
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-head" style="background:linear-gradient(135deg,var(--navy),var(--blue))">
+            <h3 style="color:#fff">📊 PRISM-IV — Score: ${d.score} | Mortality: ${d.predictedMortality}%</h3>
+            <span style="color:rgba(255,255,255,.7);font-size:12px">${d.date||''} · Saved by ${d.savedBy||'—'}</span>
+          </div>
+          <div class="card-body"><div style="display:flex;flex-wrap:wrap;gap:6px">
+            ${(d.details||[]).map(x=>`<span class="badge bg-navy">${x}</span>`).join('')||'No abnormalities scored'}
+          </div></div>
+        </div>`;
+      if(d.type==='phoenix') return `
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-head" style="background:linear-gradient(135deg,var(--danger),#c0392b)">
+            <h3 style="color:#fff">🔥 Phoenix — Total: ${d.total} | ${d.diagnosis}</h3>
+            <span style="color:rgba(255,255,255,.7);font-size:12px">${d.date||''} · Saved by ${d.savedBy||'—'}</span>
+          </div>
+          <div class="card-body">
+            <div class="rbox">
+              <div class="rrow"><span class="rlbl">Resp/CV/Coag/Neuro</span><span class="rval">${d.resp}/${d.cardio}/${d.coag}/${d.neuro}</span></div>
+              <div class="rrow"><span class="rlbl">Sepsis / Septic Shock</span><span class="rval">${d.sepsis?'Yes':'No'} / ${d.septicShock?'Yes':'No'}</span></div>
+            </div>
+          </div>
+        </div>`;
+      if(d.type==='vexus') return `
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-head" style="background:linear-gradient(135deg,var(--navy),var(--teal))">
+            <h3 style="color:#fff">🫀 VeExUSPI — Grade ${d.grade} | PI 0hr:${d.pi0} 6hr:${d.pi6}</h3>
+            <span style="color:rgba(255,255,255,.7);font-size:12px">${d.enrolDate||''} · Saved by ${d.savedBy||'—'}</span>
+          </div>
+          <div class="card-body">
+            <div class="rbox">
+              <div class="rrow"><span class="rlbl">Diagnosis</span><span class="rval">${d.diag||'—'}</span></div>
+              <div class="rrow"><span class="rlbl">Outcome</span><span class="rval"><span class="badge ${d.outcome==='Survived'?'bg-green':'bg-red'}">${d.outcome||'—'}</span></span></div>
+              <div class="rrow"><span class="rlbl">PRISM Score</span><span class="rval">${d.prismScore||'—'}</span></div>
+              <div class="rrow"><span class="rlbl">AKI (KDIGO)</span><span class="rval">${d.aki==='Yes'?'Yes — Stage '+d.akiStage:'No'}</span></div>
+              <div class="rrow"><span class="rlbl">IVC:Ao / Hepatic / Portal</span><span class="rval">${d.ivcAo||'—'} / ${d.hepatic||'—'} / ${d.portal||'—'}</span></div>
+            </div>
+          </div>
+        </div>`;
+      return `<div class="card" style="margin-bottom:14px"><div class="card-body"><p>Unknown result type: ${d.type}</p></div></div>`;
+    }).join('');
+  } catch(er){ wrap.innerHTML=`<p class="text-muted" style="padding:20px">Error: ${er.message}</p>`; }
 }
 
 // ═══════════════════════════════════════════
