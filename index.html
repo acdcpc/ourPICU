@@ -1725,7 +1725,14 @@ let mcqAnswers = {};
 // SECURITY: Admin email whitelist - Only these accounts can access Admin Panel
 // All authenticated users can access the Admin Panel
 // (Firebase login already gates access to the app)
-const ADMIN_EMAILS = []; // Not used - see isCurrentUserAdmin below
+const ADMIN_EMAILS = [
+  'prakashthapa_paed@pahs.edu.np',
+  'alinadevbhandari@pahs.edu.np',
+  'yashodhapathak@pahs.edu.np',
+  'aaa@gmail.com',
+  'picu@gmail.com',
+  'thisispratha@gmail.com'
+];
 
 let appSettings = {
   doctorName:'Dr Prakash Thapa', designation:'Pediatric Intensivist',
@@ -1868,8 +1875,8 @@ function showSec(name,el){
 
 // SECURITY: Check if current user is admin
 function isCurrentUserAdmin(){
-  // Any logged-in Firebase user is an admin
-  return currentUser !== null;
+  if(!currentUser) return false;
+  return ADMIN_EMAILS.includes(currentUser.email.trim().toLowerCase());
 }
 
 function openSidebar(){ document.getElementById('sidebar').classList.add('open'); document.getElementById('sov').classList.add('open'); }
