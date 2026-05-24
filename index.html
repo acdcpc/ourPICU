@@ -10,19 +10,10 @@
   <meta name="apple-mobile-web-app-title" content="OurPICU">
 <title>OurPICU — Dr Prakash Thapa</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
-<!-- Firebase v9+ Modular SDK (Fast Uploads, Optimized) -->
-<script type="module">
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js';
-import { getAuth } from 'https://www.gstatic.com/firebasejs/10.5.0/firebase-auth.js';
-import { getFirestore, collection, addDoc, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore.js';
-import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'https://www.gstatic.com/firebasejs/10.5.0/firebase-storage.js';
-
-window.fbModular = { 
-  initializeApp, getAuth, getFirestore, getStorage, 
-  ref, uploadBytes, getDownloadURL, deleteObject, 
-  collection, addDoc, query, where, getDocs 
-};
-</script>
+<script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-storage-compat.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <style>
 :root{
@@ -2593,53 +2584,28 @@ async function uploadCapturedImg(){
   const desc = document.getElementById('imgDesc').value;
   const btn  = document.getElementById('imgUploadBtn');
   btn.textContent = '⏳ Uploading...'; btn.disabled = true;
-  
   try{
     const fname = `${cat}_${spec}_${Date.now()}.jpg`;
-    
-    // Use modular SDK for FAST uploads
-    const storageRef = window.fbModular.ref(storage, `patients/${currentPtId}/images/${fname}`);
-    
-    // Upload compressed image (async, non-blocking)
-    const uploadTask = await window.fbModular.uploadBytes(
-      storageRef, 
-      capturedImgBlob, 
-      {contentType:'image/jpeg'}
-    );
-    
-    // Get download URL
-    const url = await window.fbModular.getDownloadURL(uploadTask.ref);
-    
-    // Save metadata to Firestore
-    const imagesRef = window.fbModular.collection(db, 'patients', currentPtId, 'images');
-    await window.fbModular.addDoc(imagesRef, {
-      storageUrl:url, 
-      category:cat, 
-      spec:spec, 
-      description:desc,
-      fileName:fname, 
-      sizeKB:Math.round(capturedImgBlob.size/1024),
+    const ref = storage.ref(`patients/${currentPtId}/images/${fname}`);
+    // Upload with metadata for faster processing
+    const metadata = { contentType:'image/jpeg', cacheControl: 'public, max-age=86400' };
+    const uploadTask = ref.put(capturedImgBlob, metadata);
+    // Wait for upload completion
+    await uploadTask;
+    const url = await ref.getDownloadURL();
+    await db.collection('patients').doc(currentPtId).collection('images').add({
+      storageUrl:url, category:cat, spec:spec, description:desc,
+      fileName:fname, sizeKB:Math.round(capturedImgBlob.size/1024),
       timestamp:new Date()
     });
-    
-    // Reset UI
+    // Reset
     capturedImgBlob = null;
     document.getElementById('imgPreviewWrap').style.display='none';
     document.getElementById('imgDesc').value='';
-    btn.textContent='💾 Save to Patient'; 
-    btn.disabled=true; 
-    btn.style.opacity='.5';
-    
+    btn.textContent='💾 Save to Patient'; btn.disabled=true; btn.style.opacity='.5';
     loadPtImages();
-    alert('✅ Image saved successfully!');
-    
-  }catch(er){ 
-    console.error('Upload error:', er);
-    alert('Upload error: '+er.message); 
-    btn.textContent='💾 Save to Patient'; 
-    btn.disabled=false; 
-    btn.style.opacity='1'; 
-  }
+    alert('✅ Image uploaded successfully!');
+  }catch(er){ alert('Upload error: '+er.message); btn.textContent='💾 Save to Patient'; btn.disabled=false; btn.style.opacity='1'; }
 }
 
 function filterImgs(filter, btn){
@@ -2703,10 +2669,7 @@ async function deleteLightboxImg(){
   if(!confirm('Delete this image? This cannot be undone.')) return;
   try{
     const d = allImgDocs.find(x=>x.id===lightboxDocId);
-    if(d&&d.fileName){
-    const delRef = window.fbModular.ref(storage, `patients/${currentPtId}/images/${d.fileName}`);
-    await window.fbModular.deleteObject(delRef).catch(()=>{});
-  }
+    if(d&&d.fileName) await storage.ref(`patients/${currentPtId}/images/${d.fileName}`).delete().catch(()=>{});
     await db.collection('patients').doc(currentPtId).collection('images').doc(lightboxDocId).delete();
     closeLightbox();
     loadPtImages();
