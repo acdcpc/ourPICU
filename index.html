@@ -2,7 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f2557">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="OurPICU">
 <title>OurPICU — Dr Prakash Thapa</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-app-compat.js"></script>
@@ -283,7 +288,7 @@ tbody tr:hover{background:#f8fafc}
 .dd-val{font-size:14px;font-weight:700;color:var(--navy);margin-top:2px}
 
 /* ── MOBILE ── */
-.mob-topbar{display:none;background:var(--navy);color:#fff;padding:11px 16px;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200}
+.mob-topbar{display:none;background:var(--navy);color:#fff;padding:10px 14px;align-items:center;gap:10px;position:sticky;top:0;z-index:200;box-shadow:0 2px 8px rgba(0,0,0,.2)}
 .mob-menu-btn{background:none;border:none;color:#fff;font-size:20px;cursor:pointer;font-family:inherit}
 .mob-bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--border);z-index:200;padding:7px 0 env(safe-area-inset-bottom)}
 .mob-items{display:flex;justify-content:space-around}
@@ -316,21 +321,107 @@ tbody tr:hover{background:#f8fafc}
   .mob-topbar{display:flex}
   .mob-bottom-nav{display:block}
   .topbar{display:none}
-  .page{padding:16px;padding-bottom:78px}
+  .page{padding:14px;padding-bottom:82px}
   .hero{padding:48px 20px}
   .feat-grid{padding:28px 16px}
   .pub-nav{padding:0 16px}
   .pub-links .pub-link:not(.btn){display:none}
+  /* Collapse all 2-col grids on tablet */
+  [style*="grid-template-columns:1fr 1fr"],
+  [style*="grid-template-columns:1fr 1.3fr"],
+  [style*="grid-template-columns:1fr 1.4fr"],
+  [style*="grid-template-columns:1fr 1.5fr"],
+  [style*="grid-template-columns:1fr 1.6fr"],
+  [style*="grid-template-columns:1fr 2fr"],
+  [style*="grid-template-columns:1fr 1fr"],
+  .ptDetailTwoCol { grid-template-columns:1fr !important }
+  /* Patient tabs: horizontal scroll */
+  .tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;padding-bottom:4px}
+  .tabs::-webkit-scrollbar{height:3px}
+  .tbtn{white-space:nowrap;flex-shrink:0}
+  /* Section headings */
+  .section-hd{padding:0 0 16px}
+  /* Cards full width */
+  .card{border-radius:12px}
+  /* Tables horizontal scroll */
+  .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table{min-width:540px}
+  /* Bed grid */
+  .bed-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+  /* Drug result boxes */
+  .rbox{font-size:13px}
+  /* Modals full screen on mobile */
+  .modal{width:96vw;max-width:none;max-height:90vh;overflow-y:auto;border-radius:14px}
+  /* Image lightbox */
+  #lightboxImg{max-width:98vw;max-height:65vh}
+  /* Patient info bar */
+  .ptInfoBanner{font-size:11.5px;padding:7px 12px}
 }
 @media(max-width:520px){
   .frow{grid-template-columns:1fr}
-  .dd-grid{grid-template-columns:1fr}
-  .pt-meta{gap:12px}
+  .dd-grid{grid-template-columns:1fr 1fr}
+  .pt-meta{gap:10px;flex-wrap:wrap}
   .calc-grid{grid-template-columns:1fr 1fr}
   .bed-grid{grid-template-columns:1fr 1fr}
+  /* Stack ALL two-column grids */
+  [style*="grid-template-columns:1fr 1fr"],
+  [style*="grid-template-columns:1fr 1.3fr"],
+  [style*="grid-template-columns:1fr 1.4fr"],
+  [style*="grid-template-columns:1fr 1.5fr"],
+  [style*="grid-template-columns:1fr 1.6fr"],
+  [style*="grid-template-columns:1fr 2fr"] { grid-template-columns:1fr !important }
+  /* VeExUSPI preview grid */
+  [style*="grid-template-columns:1fr 1fr"].card-body { grid-template-columns:1fr !important }
+  /* Font sizes */
+  .big-num{font-size:2.8rem}
+  h1{font-size:1.6rem}
+  h2{font-size:1.3rem}
+  h3{font-size:1.05rem}
+  /* Forms */
+  .fg label{font-size:12px}
+  .fg input,.fg select,.fg textarea{font-size:14px;padding:9px 11px}
+  /* Buttons */
+  .btn{padding:9px 16px;font-size:13px}
+  .btn-block{padding:11px}
+  /* Topbar */
+  .mob-topbar{padding:10px 14px}
+  /* Page padding */
+  .page{padding:10px;padding-bottom:82px}
+  /* Bottom nav labels */
+  .mob-item{font-size:9px}
+  .mob-item .mni{font-size:18px}
+  /* Section */
+  .section-hd h2{font-size:1.25rem}
+  /* Calc cards — keep 2 col on phone for PALS results */
+  .calc-grid{grid-template-columns:1fr 1fr}
+  /* Patient detail quick-stats */
+  #ptDetailView > div:first-child [style*="minmax(130px"]{
+    grid-template-columns:repeat(auto-fill,minmax(100px,1fr))
+  }
+  /* Image grid */
+  #ptImgGrid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr)) !important}
+  /* Export cards */
+  #sec-export [style*="minmax(260px"]{grid-template-columns:1fr !important}
+  /* Admin panel tabs scroll */
+  #admTabs{overflow-x:auto;flex-wrap:nowrap}
+  /* Safe area for iPhone notch */
+  .page{padding-bottom:calc(82px + env(safe-area-inset-bottom))}
+  .mob-bottom-nav{padding-bottom:calc(7px + env(safe-area-inset-bottom))}
+}
+/* Touch improvements */
+@media(hover:none){
+  .nav-item,.tbtn,.btn,.mob-item,.bed-card{-webkit-tap-highlight-color:transparent}
+  .btn:active{opacity:.8;transform:scale(.97)}
+  .tbtn:active{opacity:.8}
 }
 
 .ptctpane{display:none !important}.ptctpane.active{display:block !important}
+</style>
+<style>
+/* iOS: prevent zoom on input focus */
+@media screen and (-webkit-min-device-pixel-ratio:0){
+  select,textarea,input{font-size:16px !important}
+}
 </style>
 </head>
 <body>
@@ -488,10 +579,13 @@ tbody tr:hover{background:#f8fafc}
   </aside>
   <div class="sov" id="sov" onclick="closeSidebar()"></div>
 
-  <div class="mob-topbar">
-    <button class="mob-menu-btn" onclick="openSidebar()">☰</button>
-    <span style="font-family:'DM Serif Display',serif;font-size:1.05rem">🏥 OurPICU</span>
-    <span id="mobTitle" style="font-size:11px;opacity:.55">Dashboard</span>
+  <div class="mob-topbar" style="gap:10px">
+    <button class="mob-menu-btn" onclick="openSidebar()" style="background:none;border:none;color:#fff;font-size:1.3rem;padding:4px 8px;cursor:pointer;line-height:1">☰</button>
+    <div style="flex:1;min-width:0">
+      <div id="mobTitle" style="font-weight:700;font-size:15px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Dashboard</div>
+      <div style="font-size:10px;opacity:.5;letter-spacing:.04em">🏥 OurPICU · PAHS</div>
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="openAddPt()" style="white-space:nowrap;font-size:12px;padding:7px 12px;flex-shrink:0">➕ Patient</button>
   </div>
 
   <div class="main" id="mainWrap">
@@ -540,7 +634,7 @@ tbody tr:hover{background:#f8fafc}
         </div>
 
         <div id="ptDetailView" class="hidden">
-          <button class="btn btn-ghost btn-sm" style="margin-bottom:14px" onclick="closePtDetail()">← Back to Patients</button>
+          <button class="btn btn-ghost btn-sm" style="margin-bottom:14px;min-height:44px;padding:9px 18px" onclick="closePtDetail()">← Back to Patients</button>
           <div class="pt-header">
             <h2 id="ptDHdr">Patient</h2>
             <div class="pt-meta" id="ptDMeta"></div>
@@ -609,6 +703,7 @@ tbody tr:hover{background:#f8fafc}
 
           <!-- DRUGS TAB -->
           <div id="pt-drugs" class="tpane">
+            <div class="ptInfoBanner" style="display:none;background:linear-gradient(90deg,var(--navy),var(--blue));color:#fff;padding:8px 14px;border-radius:8px;font-size:12.5px;font-weight:600;margin-bottom:14px"></div>
             <div style="display:grid;gap:18px;grid-template-columns:1fr 1.3fr">
               <div class="card">
                 <div class="card-head"><h3>Add to Drug Chart</h3></div>
@@ -656,24 +751,69 @@ tbody tr:hover{background:#f8fafc}
 
           <!-- IMAGES TAB -->
           <div id="pt-images" class="tpane">
-            <div style="display:grid;gap:18px;grid-template-columns:1fr 1.5fr">
+            <!-- Image category filter -->
+            <div class="tabs" style="margin-bottom:16px" id="imgFilterTabs">
+              <button class="tbtn active" onclick="filterImgs('All',this)">🖼 All</button>
+              <button class="tbtn" onclick="filterImgs('Xray',this)">🩻 X-Ray</button>
+              <button class="tbtn" onclick="filterImgs('USG',this)">🔊 USG</button>
+              <button class="tbtn" onclick="filterImgs('Other',this)">📁 Other</button>
+            </div>
+            <div style="display:grid;gap:18px;grid-template-columns:1fr 1.6fr">
+              <!-- Upload / Capture panel -->
               <div class="card">
-                <div class="card-head"><h3>Upload Image</h3></div>
+                <div class="card-head"><h3>📷 Capture / Upload</h3></div>
                 <div class="card-body">
-                  <form onsubmit="uploadImg(event)">
-                    <div class="fg"><label>File (max 500 KB)</label><input type="file" id="imgFile" accept="image/*" required></div>
-                    <div class="fg"><label>Type</label>
-                      <select id="imgType"><option value="USG">Ultrasound (USG)</option><option value="Xray">X-Ray</option><option value="CT">CT Scan</option><option value="ECG">ECG</option><option value="Other">Other</option></select>
-                    </div>
-                    <div class="fg"><label>Description</label><input type="text" id="imgDesc" placeholder="e.g. ECHO showing poor LV function"></div>
-                    <button type="submit" class="btn btn-primary btn-block">Upload</button>
-                  </form>
+                  <!-- Camera capture (mobile) -->
+                  <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+                    <label class="btn btn-primary" style="cursor:pointer;flex:1;text-align:center">
+                      📷 Camera
+                      <input type="file" id="imgCamera" accept="image/*" capture="environment" style="display:none" onchange="handleImgCapture(this)">
+                    </label>
+                    <label class="btn btn-teal" style="cursor:pointer;flex:1;text-align:center">
+                      🖼 Gallery
+                      <input type="file" id="imgGallery" accept="image/*" style="display:none" onchange="handleImgCapture(this)">
+                    </label>
+                  </div>
+                  <!-- Category -->
+                  <div class="fg"><label>Category</label>
+                    <select id="imgCategory" onchange="updateImgSpecs()">
+                      <option value="Xray">🩻 X-Ray</option>
+                      <option value="USG">🔊 Ultrasound (USG)</option>
+                      <option value="Other">📁 Other</option>
+                    </select>
+                  </div>
+                  <!-- Specification — dynamic per category -->
+                  <div class="fg"><label>Specification</label>
+                    <select id="imgSpec">
+                      <option value="Chest">Chest</option>
+                      <option value="Abdomen">Abdomen</option>
+                      <option value="Skeletal">Skeletal</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  <div class="fg"><label>Notes (optional)</label>
+                    <input type="text" id="imgDesc" placeholder="e.g. Bilateral infiltrates">
+                  </div>
+                  <!-- Preview -->
+                  <div id="imgPreviewWrap" style="display:none;margin-bottom:12px">
+                    <img id="imgPreview" style="width:100%;border-radius:10px;border:2px solid var(--teal);max-height:200px;object-fit:cover">
+                    <p id="imgPreviewMeta" style="font-size:11px;color:var(--muted);margin-top:4px"></p>
+                  </div>
+                  <button class="btn btn-primary btn-block" id="imgUploadBtn" onclick="uploadCapturedImg()" disabled style="opacity:.5">💾 Save to Patient</button>
                 </div>
               </div>
+              <!-- Gallery -->
               <div class="card">
-                <div class="card-head"><h3>Stored Images</h3></div>
-                <div class="card-body" id="ptImgGrid" style="display:grid;gap:11px;grid-template-columns:repeat(auto-fill,minmax(130px,1fr))"></div>
+                <div class="card-head"><h3>Stored Images</h3><span id="imgCount" style="font-size:12px;color:var(--muted)"></span></div>
+                <div class="card-body" id="ptImgGrid" style="display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(140px,1fr))"></div>
               </div>
+            </div>
+            <!-- Lightbox -->
+            <div id="imgLightbox" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;align-items:center;justify-content:center;flex-direction:column">
+              <button onclick="closeLightbox()" style="position:absolute;top:16px;right:20px;background:none;border:none;color:#fff;font-size:2rem;cursor:pointer">✕</button>
+              <img id="lightboxImg" style="max-width:96vw;max-height:80vh;border-radius:12px;object-fit:contain">
+              <div id="lightboxCaption" style="color:#fff;margin-top:12px;font-size:13px;text-align:center;padding:0 20px"></div>
+              <button id="lightboxDelete" style="margin-top:14px;background:var(--danger);color:#fff;border:none;padding:8px 22px;border-radius:8px;cursor:pointer;font-size:13px">🗑 Delete Image</button>
             </div>
           </div>
 
@@ -1669,7 +1809,7 @@ tbody tr:hover{background:#f8fafc}
       <button class="mob-item" data-sec="education" onclick="showSec('education',this)"><span class="mni">📚</span>Edu</button>
       <button class="mob-item" data-sec="calculators" onclick="showSec('calculators',this)"><span class="mni">🧮</span>Calcs</button>
       <button class="mob-item" data-sec="export" onclick="showSec('export',this)"><span class="mni">📤</span>Export</button>
-      <button class="mob-item" data-sec="admin" onclick="showSec('admin',this)"><span class="mni">⚙️</span>Admin</button>
+      <button class="mob-item" data-sec="admin" id="mobAdminBtn" style="display:none" onclick="showSec('admin',this)"><span class="mni">⚙️</span>Admin</button>
     </div>
   </nav>
 </div><!-- /privateApp -->
@@ -1784,6 +1924,8 @@ function showPrivateApp(user){
   adminButtons.forEach(btn => {
     btn.style.display = isAdmin ? 'flex' : 'none';
   });
+  const mobAdminEl = document.getElementById('mobAdminBtn');
+  if(mobAdminEl) mobAdminEl.style.display = isAdmin ? 'flex' : 'none';
 }
 
 function doLogin(e){
@@ -2178,7 +2320,7 @@ function renderPtTable(){
       <td><span class="badge ${bc}">${fo?fo.toFixed(1)+'%':'—'}</span></td>
       <td style="display:flex;gap:6px;flex-wrap:wrap">
         <button class="btn btn-blue btn-sm" onclick="openPtDetail('${p.id}')">View</button>
-        <button class="btn btn-ghost btn-sm" onclick="dischargePt('${p.id}')">Discharge</button>
+        ${['thisispratha@gmail.com','aaa@gmail.com'].includes(currentUser&&currentUser.email)?`<button class="btn btn-ghost btn-sm" onclick="dischargePt('${p.id}')">Discharge</button>`:''}
       </td>
     </tr>`;
   }).join('');
@@ -2408,32 +2550,157 @@ async function loadPtLabs(){
 }
 
 // ═══════════════════════════════════════════
-//  IMAGES
+//  IMAGES — Camera + Compress + Categories
 // ═══════════════════════════════════════════
-async function uploadImg(e){
-  e.preventDefault();
-  if(!currentPtId)return;
-  const file=document.getElementById('imgFile').files[0];
-  if(!file)return;
-  if(file.size>500000){alert('File too large — max 500 KB');return}
+const IMG_SPECS = {
+  Xray: ['Chest','Abdomen','Skeletal/Limb','Other'],
+  USG:  ['Cranium','Transcranial Doppler','Hepatic Vein','IVC','Portal Vein','Renal Vein','Vascular','Miscellaneous'],
+  Other:['ECG','Clinical Photo','Document','Miscellaneous']
+};
+let capturedImgBlob = null;
+let currentImgFilter = 'All';
+let allImgDocs = [];
+
+function updateImgSpecs(){
+  const cat = document.getElementById('imgCategory').value;
+  const sel = document.getElementById('imgSpec');
+  const specs = IMG_SPECS[cat] || ['Other'];
+  sel.innerHTML = specs.map(s=>`<option value="${s}">${s}</option>`).join('');
+}
+
+function handleImgCapture(input){
+  const file = input.files[0]; if(!file) return;
+  // Compress via Canvas — target max 1024px wide, JPEG quality 0.60
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 1024;
+      let w = img.width, h = img.height;
+      if(w > MAX){ h = Math.round(h * MAX / w); w = MAX; }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      canvas.toBlob(blob => {
+        capturedImgBlob = blob;
+        const url = URL.createObjectURL(blob);
+        const prev = document.getElementById('imgPreview');
+        const wrap = document.getElementById('imgPreviewWrap');
+        const meta = document.getElementById('imgPreviewMeta');
+        const btn  = document.getElementById('imgUploadBtn');
+        prev.src = url;
+        wrap.style.display = 'block';
+        meta.textContent = `Size: ${Math.round(blob.size/1024)} KB · ${w}×${h}px (compressed from ${Math.round(file.size/1024)} KB)`;
+        btn.disabled = false; btn.style.opacity = '1';
+      }, 'image/jpeg', 0.60);
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+  // Reset file inputs so same file can be re-selected
+  document.getElementById('imgCamera').value='';
+  document.getElementById('imgGallery').value='';
+}
+
+async function uploadCapturedImg(){
+  if(!capturedImgBlob || !currentPtId){ alert('No image selected.'); return; }
+  const cat  = document.getElementById('imgCategory').value;
+  const spec = document.getElementById('imgSpec').value;
+  const desc = document.getElementById('imgDesc').value;
+  const btn  = document.getElementById('imgUploadBtn');
+  btn.textContent = '⏳ Saving…'; btn.disabled = true;
   try{
-    const ref=storage.ref(`patients/${currentPtId}/${Date.now()}_${file.name}`);
-    await ref.put(file);
-    const url=await ref.getDownloadURL();
-    await db.collection('patients').doc(currentPtId).collection('images').add({storageUrl:url,description:document.getElementById('imgDesc').value,type:document.getElementById('imgType').value,fileName:file.name,timestamp:new Date()});
-    alert('✅ Uploaded!'); e.target.reset(); loadPtImages();
-  }catch(er){alert('Upload error: '+er.message)}
+    const fname = `${cat}_${spec}_${Date.now()}.jpg`;
+    const ref = storage.ref(`patients/${currentPtId}/images/${fname}`);
+    await ref.put(capturedImgBlob, {contentType:'image/jpeg'});
+    const url = await ref.getDownloadURL();
+    await db.collection('patients').doc(currentPtId).collection('images').add({
+      storageUrl:url, category:cat, spec:spec, description:desc,
+      fileName:fname, sizeKB:Math.round(capturedImgBlob.size/1024),
+      timestamp:new Date()
+    });
+    // Reset
+    capturedImgBlob = null;
+    document.getElementById('imgPreviewWrap').style.display='none';
+    document.getElementById('imgDesc').value='';
+    btn.textContent='💾 Save to Patient'; btn.disabled=true; btn.style.opacity='.5';
+    loadPtImages();
+  }catch(er){ alert('Upload error: '+er.message); btn.textContent='💾 Save to Patient'; btn.disabled=false; btn.style.opacity='1'; }
+}
+
+function filterImgs(filter, btn){
+  currentImgFilter = filter;
+  document.querySelectorAll('#imgFilterTabs .tbtn').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  renderImgGrid();
+}
+
+function renderImgGrid(){
+  const grid = document.getElementById('ptImgGrid'); if(!grid) return;
+  const filtered = currentImgFilter==='All' ? allImgDocs : allImgDocs.filter(d=>d.category===currentImgFilter);
+  const cnt = document.getElementById('imgCount');
+  if(cnt) cnt.textContent = `${filtered.length} image${filtered.length!==1?'s':''}`;
+  if(!filtered.length){
+    grid.innerHTML=`<p class="text-muted" style="grid-column:1/-1;padding:20px">${currentImgFilter==='All'?'No images yet — use Camera or Gallery above.':'No '+currentImgFilter+' images.'}</p>`;
+    return;
+  }
+  grid.innerHTML = filtered.map(d=>`
+    <div onclick="openLightbox('${d.id}')" style="cursor:pointer;border-radius:12px;overflow:hidden;border:2px solid var(--border);background:var(--bg);transition:.2s" onmouseover="this.style.borderColor='var(--teal)'" onmouseout="this.style.borderColor='var(--border)'">
+      <img src="${d.storageUrl}" style="width:100%;height:110px;object-fit:cover" loading="lazy">
+      <div style="padding:7px 9px">
+        <div style="font-size:11px;font-weight:700;color:var(--navy)">${d.category||''}${d.spec?' · '+d.spec:''}</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px">${d.description||''}</div>
+        <div style="font-size:9px;color:var(--muted);margin-top:2px">${d.sizeKB?d.sizeKB+' KB':''}</div>
+      </div>
+    </div>`).join('');
 }
 
 async function loadPtImages(){
-  if(!currentPtId)return;
+  if(!currentPtId) return;
   try{
-    const snap=await db.collection('patients').doc(currentPtId).collection('images').orderBy('timestamp','desc').get();
-    const c=document.getElementById('ptImgGrid'); if(!c)return;
-    if(snap.empty){c.innerHTML='<p class="text-muted">No images uploaded</p>';return}
-    c.innerHTML=snap.docs.map(doc=>{ const d=doc.data(); return `<div style="text-align:center"><a href="${d.storageUrl}" target="_blank"><img src="${d.storageUrl}" style="width:100%;border-radius:8px;border:1px solid var(--border)" loading="lazy"></a><p style="font-size:11px;color:var(--muted);margin-top:5px">${d.type}: ${d.description||''}</p></div>`; }).join('');
-  }catch(e){console.warn(e)}
+    const snap = await db.collection('patients').doc(currentPtId).collection('images').orderBy('timestamp','desc').get();
+    allImgDocs = snap.docs.map(doc=>({id:doc.id,...doc.data()}));
+    renderImgGrid();
+  }catch(e){ console.warn(e); }
 }
+
+let lightboxDocId = null;
+function openLightbox(docId){
+  const d = allImgDocs.find(x=>x.id===docId); if(!d) return;
+  lightboxDocId = docId;
+  document.getElementById('lightboxImg').src = d.storageUrl;
+  document.getElementById('lightboxCaption').textContent =
+    `${d.category||''}${d.spec?' — '+d.spec:''} ${d.description?'| '+d.description:''} ${d.sizeKB?'| '+d.sizeKB+' KB':''}`;
+  const lb = document.getElementById('imgLightbox');
+  lb.style.display='flex';
+  // Only show delete button to admins
+  document.getElementById('lightboxDelete').style.display = isCurrentUserAdmin()?'':'none';
+}
+
+function closeLightbox(){
+  document.getElementById('imgLightbox').style.display='none';
+  lightboxDocId=null;
+}
+
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeLightbox(); });
+
+async function deleteLightboxImg(){
+  if(!lightboxDocId || !currentPtId) return;
+  if(!confirm('Delete this image? This cannot be undone.')) return;
+  try{
+    const d = allImgDocs.find(x=>x.id===lightboxDocId);
+    if(d&&d.fileName) await storage.ref(`patients/${currentPtId}/images/${d.fileName}`).delete().catch(()=>{});
+    await db.collection('patients').doc(currentPtId).collection('images').doc(lightboxDocId).delete();
+    closeLightbox();
+    loadPtImages();
+  }catch(er){ alert('Delete error: '+er.message); }
+}
+
+// Wire delete button
+document.addEventListener('DOMContentLoaded',()=>{
+  const delBtn = document.getElementById('lightboxDelete');
+  if(delBtn) delBtn.onclick = deleteLightboxImg;
+});
 
 // ═══════════════════════════════════════════
 //  CLINICAL NOTES
@@ -3291,21 +3558,35 @@ function swPtCalcTab(tab, btn){
 
 function prefillPtCalcs(){
   const p = allPts.find(x=>x.id===currentPtId); if(!p) return;
-  // Pre-fill VeExUSPI demographics
-  if(document.getElementById('ptcAge'))   document.getElementById('ptcAge').value   = p.age ? p.age+' years' : '';
-  if(document.getElementById('ptcSex'))   document.getElementById('ptcSex').value   = p.sex || 'Male';
-  if(document.getElementById('ptcWt'))    document.getElementById('ptcWt').value    = p.weight || '';
-  if(document.getElementById('ptcDiag'))  document.getElementById('ptcDiag').value  = p.diagnosis || '';
-  if(document.getElementById('ptcAdmDate')) document.getElementById('ptcAdmDate').value = p.admissionDate || '';
-  // Update info banners
-  const info = `Patient: Bed ${p.bedNumber} | Age: ${p.age} yr | Weight: ${p.weight} kg | Sex: ${p.sex||'—'} | Dx: ${p.diagnosis}`;
+  const ageMonths = Math.round(parseFloat(p.age||0)*12);
+  const info = `Bed ${p.bedNumber} | Age: ${p.age||'—'} yr | Weight: ${p.weight||'—'} kg | Sex: ${p.sex||'—'} | Dx: ${p.diagnosis||'—'}`;
+
+  // ── Calc tab: VeExUSPI fields ──
+  const setVal=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v;};
+  setVal('ptcAge',   p.age ? p.age+' years' : '');
+  setVal('ptcSex',   p.sex || 'Male');
+  setVal('ptcWt',    p.weight || '');
+  setVal('ptcDiag',  p.diagnosis || '');
+  setVal('ptcAdmDate', p.admissionDate || '');
+  // Info banners
   ['ptc-pt-info','ptcPrismInfo','ptcPhoenixInfo'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.textContent=info;
   });
-  // Pre-fill PRISM age in months
-  if(document.getElementById('ptcPrismAge') && p.age){
-    document.getElementById('ptcPrismAge').value = Math.round(parseFloat(p.age)*12)||'';
-  }
+  // PRISM age in months
+  setVal('ptcPrismAge', ageMonths||'');
+
+  // ── Drug calculator: auto-set weight ──
+  setVal('drugWeight', p.weight||'');
+  setVal('drugAge',    p.age||'');
+
+  // ── Fluid balance: auto-set weight ──
+  setVal('fbWeight', p.weight||'');
+
+  // ── Patient info banner across all tabs ──
+  document.querySelectorAll('.ptInfoBanner').forEach(el=>{
+    el.textContent = info;
+    el.style.display='block';
+  });
 }
 
 function getPtcVeExUSData(){
@@ -3651,6 +3932,43 @@ document.addEventListener('DOMContentLoaded',()=>{
   ['expFrom','expTo'].forEach(id=>{ const el=document.getElementById(id); if(el)el.value=t; });
   loadPubEdu();
   document.getElementById('dashDate').textContent='Today: '+new Date().toLocaleDateString('en-GB',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+});
+</script>
+
+<!-- PWA Service Worker -->
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    // Inline service worker via blob
+    const swCode = `
+      const CACHE='ourpicu-v1';
+      const ASSETS=['.'];
+      self.addEventListener('install', e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS))));
+      self.addEventListener('fetch', e=>{
+        if(e.request.url.includes('firestore')||e.request.url.includes('firebase')||e.request.url.includes('googleapis')){
+          e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));
+        } else {
+          e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(res=>{
+            const clone=res.clone();
+            caches.open(CACHE).then(c=>c.put(e.request,clone));
+            return res;
+          })));
+        }
+      });
+    `;
+    const blob = new Blob([swCode], {type:'application/javascript'});
+    const swUrl = URL.createObjectURL(blob);
+    navigator.serviceWorker.register(swUrl).catch(()=>{});
+  });
+}
+
+// PWA install prompt
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', e=>{
+  e.preventDefault();
+  deferredPrompt = e;
+  const btn = document.getElementById('pwaInstallBtn');
+  if(btn) btn.style.display='flex';
 });
 </script>
 </body>
