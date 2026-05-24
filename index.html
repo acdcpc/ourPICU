@@ -2584,28 +2584,73 @@ async function uploadCapturedImg(){
   const desc = document.getElementById('imgDesc').value;
   const btn  = document.getElementById('imgUploadBtn');
   btn.textContent = '⏳ Uploading...'; btn.disabled = true;
+  
   try{
     const fname = `${cat}_${spec}_${Date.now()}.jpg`;
     const ref = storage.ref(`patients/${currentPtId}/images/${fname}`);
-    // Upload with metadata for faster processing
-    const metadata = { contentType:'image/jpeg', cacheControl: 'public, max-age=86400' };
-    const uploadTask = ref.put(capturedImgBlob, metadata);
-    // Wait for upload completion
-    await uploadTask;
-    const url = await ref.getDownloadURL();
-    await db.collection('patients').doc(currentPtId).collection('images').add({
-      storageUrl:url, category:cat, spec:spec, description:desc,
-      fileName:fname, sizeKB:Math.round(capturedImgBlob.size/1024),
-      timestamp:new Date()
+    
+    // OPTIMIZED: Use uploadBytesResumable for better performance
+    const uploadTask = ref.put(capturedImgBlob, {
+      contentType:'image/jpeg',
+      cacheControl: 'public, max-age=31536000',
+      customMetadata: { 'upload-source': 'picu-app' }
     });
-    // Reset
-    capturedImgBlob = null;
-    document.getElementById('imgPreviewWrap').style.display='none';
-    document.getElementById('imgDesc').value='';
-    btn.textContent='💾 Save to Patient'; btn.disabled=true; btn.style.opacity='.5';
-    loadPtImages();
-    alert('✅ Image uploaded successfully!');
-  }catch(er){ alert('Upload error: '+er.message); btn.textContent='💾 Save to Patient'; btn.disabled=false; btn.style.opacity='1'; }
+    
+    // Track upload progress
+    uploadTask.on('state_changed',
+      (snapshot) => {
+        // Progress monitoring
+        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        btn.textContent = `⏳ ${Math.round(progress)}%`;
+      },
+      (error) => {
+        // Error handling
+        console.error('Upload error:', error);
+        btn.textContent = '💾 Save to Patient';
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        alert('Upload failed: ' + error.message);
+      },
+      () => {
+        // Upload completed - get URL and save to Firestore
+        uploadTask.snapshot.ref.getDownloadURL().then((url) => {
+          // Save to Firestore (very fast - just metadata)
+          db.collection('patients').doc(currentPtId).collection('images').add({
+            storageUrl: url,
+            category: cat,
+            spec: spec,
+            description: desc,
+            fileName: fname,
+            sizeKB: Math.round(capturedImgBlob.size / 1024),
+            timestamp: new Date()
+          }).then(() => {
+            // Success!
+            capturedImgBlob = null;
+            document.getElementById('imgPreviewWrap').style.display = 'none';
+            document.getElementById('imgDesc').value = '';
+            btn.textContent = '💾 Save to Patient';
+            btn.disabled = true;
+            btn.style.opacity = '.5';
+            loadPtImages();
+            alert('✅ Image uploaded successfully!');
+          }).catch((err) => {
+            console.error('Firestore error:', err);
+            alert('Error saving metadata: ' + err.message);
+            btn.textContent = '💾 Save to Patient';
+            btn.disabled = false;
+            btn.style.opacity = '1';
+          });
+        });
+      }
+    );
+    
+  }catch(er){
+    console.error('Error:', er);
+    alert('Upload error: ' + er.message);
+    btn.textContent = '💾 Save to Patient';
+    btn.disabled = false;
+    btn.style.opacity = '1';
+  }
 }
 
 function filterImgs(filter, btn){
