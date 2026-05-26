@@ -2532,7 +2532,8 @@ const IMG_SPECS = {
   USG:  ['Cranium','Transcranial Doppler','Hepatic Vein','IVC','Portal Vein','Renal Vein','Vascular','Miscellaneous'],
   Other:['ECG','Clinical Photo','Document','Miscellaneous']
 };
-let capturedImgBlob = null;
+let capturedImgBlob = null;     // full image (~60-120KB) — for lightbox
+let capturedThumbBlob = null;   // thumbnail (~15-30KB) — for gallery
 let currentImgFilter = 'All';
 let allImgDocs = [];
 
@@ -2545,105 +2546,108 @@ function updateImgSpecs(){
 
 function handleImgCapture(input){
   const file = input.files[0]; if(!file) return;
-  // OPTIMIZED: Use ObjectURL directly — no FileReader, no base64, no memory spike
+  // OPTIMIZED: ObjectURL — no FileReader, no base64, no memory spike
   const objectUrl = URL.createObjectURL(file);
   const img = new Image();
   img.onload = () => {
-    const MAX = 800;
-    let w = img.width, h = img.height;
-    if(w > MAX){ h = Math.round(h * MAX / w); w = MAX; }
-    const canvas = document.createElement('canvas');
-    canvas.width = w; canvas.height = h;
-    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-    canvas.toBlob(blob => {
-      capturedImgBlob = blob;
-      const previewUrl = URL.createObjectURL(blob);
-      const prev = document.getElementById('imgPreview');
-      const wrap = document.getElementById('imgPreviewWrap');
-      const meta = document.getElementById('imgPreviewMeta');
-      const btn  = document.getElementById('imgUploadBtn');
-      prev.src = previewUrl;
-      wrap.style.display = 'block';
-      meta.textContent = `Size: ${Math.round(blob.size/1024)} KB · ${w}×${h}px (compressed from ${Math.round(file.size/1024)} KB)`;
-      btn.disabled = false; btn.style.opacity = '1';
-      URL.revokeObjectURL(objectUrl); // free original file memory
-    }, 'image/jpeg', 0.45);
+    // --- Full image: 500px, JPEG 0.30 (~60-120 KB for lightbox) ---
+    const FULL_MAX = 500;
+    let fw = img.width, fh = img.height;
+    if(fw > FULL_MAX){ fh = Math.round(fh * FULL_MAX / fw); fw = FULL_MAX; }
+    const fullCanvas = document.createElement('canvas');
+    fullCanvas.width = fw; fullCanvas.height = fh;
+    fullCanvas.getContext('2d').drawImage(img, 0, 0, fw, fh);
+
+    // --- Thumbnail: 200px, JPEG 0.25 (~15-30 KB for gallery tiles) ---
+    const THUMB_MAX = 200;
+    let tw = img.width, th = img.height;
+    if(tw > THUMB_MAX){ th = Math.round(th * THUMB_MAX / tw); tw = THUMB_MAX; }
+    const thumbCanvas = document.createElement('canvas');
+    thumbCanvas.width = tw; thumbCanvas.height = th;
+    thumbCanvas.getContext('2d').drawImage(img, 0, 0, tw, th);
+
+    fullCanvas.toBlob(fullBlob => {
+      capturedImgBlob = fullBlob;
+      thumbCanvas.toBlob(thumbBlob => {
+        capturedThumbBlob = thumbBlob;
+        const previewUrl = URL.createObjectURL(thumbBlob);
+        const prev = document.getElementById('imgPreview');
+        const wrap = document.getElementById('imgPreviewWrap');
+        const meta = document.getElementById('imgPreviewMeta');
+        const btn  = document.getElementById('imgUploadBtn');
+        prev.src = previewUrl;
+        wrap.style.display = 'block';
+        meta.textContent = `Full: ${Math.round(fullBlob.size/1024)} KB · Thumb: ${Math.round(thumbBlob.size/1024)} KB · (original: ${Math.round(file.size/1024)} KB)`;
+        btn.disabled = false; btn.style.opacity = '1';
+        URL.revokeObjectURL(objectUrl);
+      }, 'image/jpeg', 0.25);
+    }, 'image/jpeg', 0.30);
   };
   img.src = objectUrl;
-  // Reset file inputs so same file can be re-selected
   document.getElementById('imgCamera').value='';
   document.getElementById('imgGallery').value='';
 }
 
 async function uploadCapturedImg(){
-  if(!capturedImgBlob || !currentPtId){ alert('No image selected.'); return; }
+  if(!capturedImgBlob || !capturedThumbBlob || !currentPtId){ alert('No image selected.'); return; }
   const cat  = document.getElementById('imgCategory').value;
   const spec = document.getElementById('imgSpec').value;
   const desc = document.getElementById('imgDesc').value;
   const btn  = document.getElementById('imgUploadBtn');
-  btn.textContent = '⏳ Uploading...'; btn.disabled = true;
-  
+  btn.disabled = true;
+
   try{
-    const fname = `${cat}_${spec}_${Date.now()}.jpg`;
-    const ref = storage.ref(`patients/${currentPtId}/images/${fname}`);
-    
-    // OPTIMIZED: Use uploadBytesResumable for better performance
-    const uploadTask = ref.put(capturedImgBlob, {
-      contentType:'image/jpeg',
-      cacheControl: 'public, max-age=31536000',
-      customMetadata: { 'upload-source': 'picu-app' }
+    const ts    = Date.now();
+    const fname = `${cat}_${spec}_${ts}.jpg`;
+    const tname = `${cat}_${spec}_${ts}_thumb.jpg`;
+    const storageMeta = { contentType:'image/jpeg', cacheControl:'public, max-age=31536000' };
+
+    // Step 1: Upload thumbnail first — tiny, nearly instant
+    btn.textContent = '⏳ Thumb…';
+    const thumbRef = storage.ref(`patients/${currentPtId}/images/thumbs/${tname}`);
+    await thumbRef.put(capturedThumbBlob, storageMeta);
+    const thumbUrl = await thumbRef.getDownloadURL();
+
+    // Step 2: Upload full image with progress bar
+    const fullRef    = storage.ref(`patients/${currentPtId}/images/${fname}`);
+    const uploadTask = fullRef.put(capturedImgBlob, storageMeta);
+
+    await new Promise((resolve, reject) => {
+      uploadTask.on('state_changed',
+        snap => { btn.textContent = `⏳ ${Math.round((snap.bytesTransferred/snap.totalBytes)*100)}%`; },
+        reject,
+        resolve
+      );
     });
-    
-    // Track upload progress
-    uploadTask.on('state_changed',
-      (snapshot) => {
-        // Progress monitoring
-        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        btn.textContent = `⏳ ${Math.round(progress)}%`;
-      },
-      (error) => {
-        // Error handling
-        console.error('Upload error:', error);
-        btn.textContent = '💾 Save to Patient';
-        btn.disabled = false;
-        btn.style.opacity = '1';
-        alert('Upload failed: ' + error.message);
-      },
-      () => {
-        // Upload completed - get URL and save to Firestore
-        uploadTask.snapshot.ref.getDownloadURL().then((url) => {
-          // Save to Firestore (very fast - just metadata)
-          db.collection('patients').doc(currentPtId).collection('images').add({
-            storageUrl: url,
-            category: cat,
-            spec: spec,
-            description: desc,
-            fileName: fname,
-            sizeKB: Math.round(capturedImgBlob.size / 1024),
-            timestamp: new Date()
-          }).then(() => {
-            // Success!
-            capturedImgBlob = null;
-            document.getElementById('imgPreviewWrap').style.display = 'none';
-            document.getElementById('imgDesc').value = '';
-            btn.textContent = '💾 Save to Patient';
-            btn.disabled = true;
-            btn.style.opacity = '.5';
-            loadPtImages();
-            alert('✅ Image uploaded successfully!');
-          }).catch((err) => {
-            console.error('Firestore error:', err);
-            alert('Error saving metadata: ' + err.message);
-            btn.textContent = '💾 Save to Patient';
-            btn.disabled = false;
-            btn.style.opacity = '1';
-          });
-        });
-      }
-    );
-    
+
+    const fullUrl = await uploadTask.snapshot.ref.getDownloadURL();
+
+    // Step 3: Save both URLs to Firestore
+    await db.collection('patients').doc(currentPtId).collection('images').add({
+      storageUrl:   fullUrl,   // full image — lightbox only
+      thumbnailUrl: thumbUrl,  // tiny thumbnail — gallery grid
+      category: cat,
+      spec: spec,
+      description: desc,
+      fileName: fname,
+      sizeKB:      Math.round(capturedImgBlob.size / 1024),
+      thumbSizeKB: Math.round(capturedThumbBlob.size / 1024),
+      timestamp: new Date()
+    });
+
+    // Success cleanup
+    capturedImgBlob   = null;
+    capturedThumbBlob = null;
+    document.getElementById('imgPreviewWrap').style.display = 'none';
+    document.getElementById('imgDesc').value = '';
+    btn.textContent = '💾 Save to Patient';
+    btn.disabled = true;
+    btn.style.opacity = '.5';
+    loadPtImages();
+    alert('✅ Image uploaded successfully!');
+
   }catch(er){
-    console.error('Error:', er);
+    console.error('Upload error:', er);
     alert('Upload error: ' + er.message);
     btn.textContent = '💾 Save to Patient';
     btn.disabled = false;
@@ -2669,7 +2673,7 @@ function renderImgGrid(){
   }
   grid.innerHTML = filtered.map(d=>`
     <div onclick="openLightbox('${d.id}')" style="cursor:pointer;border-radius:12px;overflow:hidden;border:2px solid var(--border);background:var(--bg);transition:.2s" onmouseover="this.style.borderColor='var(--teal)'" onmouseout="this.style.borderColor='var(--border)'">
-      <img src="${d.storageUrl}" style="width:100%;height:110px;object-fit:cover" loading="lazy" decoding="async">
+      <img src="${d.thumbnailUrl || d.storageUrl}" style="width:100%;height:110px;object-fit:cover" loading="lazy" decoding="async" fetchpriority="low">
       <div style="padding:7px 9px">
         <div style="font-size:11px;font-weight:700;color:var(--navy)">${d.category||''}${d.spec?' · '+d.spec:''}</div>
         <div style="font-size:10px;color:var(--muted);margin-top:2px">${d.description||''}</div>
