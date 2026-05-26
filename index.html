@@ -2545,33 +2545,31 @@ function updateImgSpecs(){
 
 function handleImgCapture(input){
   const file = input.files[0]; if(!file) return;
-  // Compress via Canvas — target max 1024px wide, JPEG quality 0.60
-  const reader = new FileReader();
-  reader.onload = ev => {
-    const img = new Image();
-    img.onload = () => {
-      const MAX = 1024;
-      let w = img.width, h = img.height;
-      if(w > MAX){ h = Math.round(h * MAX / w); w = MAX; }
-      const canvas = document.createElement('canvas');
-      canvas.width = w; canvas.height = h;
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      canvas.toBlob(blob => {
-        capturedImgBlob = blob;
-        const url = URL.createObjectURL(blob);
-        const prev = document.getElementById('imgPreview');
-        const wrap = document.getElementById('imgPreviewWrap');
-        const meta = document.getElementById('imgPreviewMeta');
-        const btn  = document.getElementById('imgUploadBtn');
-        prev.src = url;
-        wrap.style.display = 'block';
-        meta.textContent = `Size: ${Math.round(blob.size/1024)} KB · ${w}×${h}px (compressed from ${Math.round(file.size/1024)} KB)`;
-        btn.disabled = false; btn.style.opacity = '1';
-      }, 'image/jpeg', 0.60);
-    };
-    img.src = ev.target.result;
+  // OPTIMIZED: Use ObjectURL directly — no FileReader, no base64, no memory spike
+  const objectUrl = URL.createObjectURL(file);
+  const img = new Image();
+  img.onload = () => {
+    const MAX = 800;
+    let w = img.width, h = img.height;
+    if(w > MAX){ h = Math.round(h * MAX / w); w = MAX; }
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+    canvas.toBlob(blob => {
+      capturedImgBlob = blob;
+      const previewUrl = URL.createObjectURL(blob);
+      const prev = document.getElementById('imgPreview');
+      const wrap = document.getElementById('imgPreviewWrap');
+      const meta = document.getElementById('imgPreviewMeta');
+      const btn  = document.getElementById('imgUploadBtn');
+      prev.src = previewUrl;
+      wrap.style.display = 'block';
+      meta.textContent = `Size: ${Math.round(blob.size/1024)} KB · ${w}×${h}px (compressed from ${Math.round(file.size/1024)} KB)`;
+      btn.disabled = false; btn.style.opacity = '1';
+      URL.revokeObjectURL(objectUrl); // free original file memory
+    }, 'image/jpeg', 0.45);
   };
-  reader.readAsDataURL(file);
+  img.src = objectUrl;
   // Reset file inputs so same file can be re-selected
   document.getElementById('imgCamera').value='';
   document.getElementById('imgGallery').value='';
@@ -2671,7 +2669,7 @@ function renderImgGrid(){
   }
   grid.innerHTML = filtered.map(d=>`
     <div onclick="openLightbox('${d.id}')" style="cursor:pointer;border-radius:12px;overflow:hidden;border:2px solid var(--border);background:var(--bg);transition:.2s" onmouseover="this.style.borderColor='var(--teal)'" onmouseout="this.style.borderColor='var(--border)'">
-      <img src="${d.storageUrl}" style="width:100%;height:110px;object-fit:cover" loading="lazy">
+      <img src="${d.storageUrl}" style="width:100%;height:110px;object-fit:cover" loading="lazy" decoding="async">
       <div style="padding:7px 9px">
         <div style="font-size:11px;font-weight:700;color:var(--navy)">${d.category||''}${d.spec?' · '+d.spec:''}</div>
         <div style="font-size:10px;color:var(--muted);margin-top:2px">${d.description||''}</div>
@@ -2683,7 +2681,7 @@ function renderImgGrid(){
 async function loadPtImages(){
   if(!currentPtId) return;
   try{
-    const snap = await db.collection('patients').doc(currentPtId).collection('images').orderBy('timestamp','desc').get();
+    const snap = await db.collection('patients').doc(currentPtId).collection('images').orderBy('timestamp','desc').limit(12).get();
     allImgDocs = snap.docs.map(doc=>({id:doc.id,...doc.data()}));
     renderImgGrid();
   }catch(e){ console.warn(e); }
