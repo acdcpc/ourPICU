@@ -779,7 +779,13 @@ tbody tr:hover{background:#f8fafc}
               </div>
               <!-- Gallery -->
               <div class="card">
-                <div class="card-head"><h3>Stored Images</h3><span id="imgCount" style="font-size:12px;color:var(--muted)"></span></div>
+                <div class="card-head">
+                  <h3>Stored Images</h3>
+                  <span style="display:flex;align-items:center;gap:8px">
+                    <span id="imgCount" style="font-size:12px;color:var(--muted)"></span>
+                    <button id="migrateThumbsBtn" onclick="migrateOldImages()" style="font-size:10px;padding:3px 8px;border-radius:6px;border:1px solid var(--teal);background:transparent;color:var(--teal);cursor:pointer;display:none">⚡ Fix old images</button>
+                  </span>
+                </div>
                 <div class="card-body" id="ptImgGrid" style="display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(140px,1fr))"></div>
               </div>
             </div>
@@ -2667,19 +2673,30 @@ function renderImgGrid(){
   const filtered = currentImgFilter==='All' ? allImgDocs : allImgDocs.filter(d=>d.category===currentImgFilter);
   const cnt = document.getElementById('imgCount');
   if(cnt) cnt.textContent = `${filtered.length} image${filtered.length!==1?'s':''}`;
+
+  // Show migrate button if any legacy images (no thumbnailUrl) exist
+  const hasLegacy = filtered.some(d => !d.thumbnailUrl);
+  const migrateBtn = document.getElementById('migrateThumbsBtn');
+  if(migrateBtn) migrateBtn.style.display = hasLegacy ? 'inline-block' : 'none';
+
   if(!filtered.length){
     grid.innerHTML=`<p class="text-muted" style="grid-column:1/-1;padding:20px">${currentImgFilter==='All'?'No images yet — use Camera or Gallery above.':'No '+currentImgFilter+' images.'}</p>`;
     return;
   }
-  grid.innerHTML = filtered.map(d=>`
-    <div onclick="openLightbox('${d.id}')" style="cursor:pointer;border-radius:12px;overflow:hidden;border:2px solid var(--border);background:var(--bg);transition:.2s" onmouseover="this.style.borderColor='var(--teal)'" onmouseout="this.style.borderColor='var(--border)'">
-      <img src="${d.thumbnailUrl || d.storageUrl}" style="width:100%;height:110px;object-fit:cover" loading="lazy" decoding="async" fetchpriority="low">
+  grid.innerHTML = filtered.map(d => {
+    const isLegacy = !d.thumbnailUrl;
+    const imgSrc   = d.thumbnailUrl || d.storageUrl;
+    return `
+    <div onclick="openLightbox('${d.id}')" style="cursor:pointer;border-radius:12px;overflow:hidden;border:2px solid ${isLegacy?'#f0a500':'var(--border)'};background:var(--bg);transition:.2s;position:relative" onmouseover="this.style.borderColor='var(--teal)'" onmouseout="this.style.borderColor='${isLegacy?'#f0a500':'var(--border)'}'">
+      ${isLegacy ? '<div style="position:absolute;top:4px;right:4px;background:#f0a500;color:#fff;font-size:8px;padding:2px 5px;border-radius:4px;z-index:1">legacy</div>' : ''}
+      <img src="${imgSrc}" style="width:100%;height:110px;object-fit:cover" loading="lazy" decoding="async" fetchpriority="low">
       <div style="padding:7px 9px">
         <div style="font-size:11px;font-weight:700;color:var(--navy)">${d.category||''}${d.spec?' · '+d.spec:''}</div>
         <div style="font-size:10px;color:var(--muted);margin-top:2px">${d.description||''}</div>
-        <div style="font-size:9px;color:var(--muted);margin-top:2px">${d.sizeKB?d.sizeKB+' KB':''}</div>
+        <div style="font-size:9px;color:var(--muted);margin-top:2px">${isLegacy?'⚠ No thumbnail':'✓ '+Math.round((d.thumbSizeKB||d.sizeKB||0))+' KB thumb'}</div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 async function loadPtImages(){
@@ -2690,6 +2707,71 @@ async function loadPtImages(){
     renderImgGrid();
   }catch(e){ console.warn(e); }
 }
+// ═══════════════════════════════════════════
+//  LEGACY THUMBNAIL MIGRATION
+//  Generates thumbnails for old images missing thumbnailUrl
+// ═══════════════════════════════════════════
+async function migrateOldImages(){
+  if(!currentPtId) return;
+  const legacy = allImgDocs.filter(d => !d.thumbnailUrl);
+  if(!legacy.length){ alert('All images already have thumbnails!'); return; }
+
+  const btn = document.getElementById('migrateThumbsBtn');
+  btn.disabled = true;
+
+  let done = 0;
+  for(const d of legacy){
+    try{
+      btn.textContent = `⚡ ${done}/${legacy.length}…`;
+
+      // Fetch full image as blob
+      const resp = await fetch(d.storageUrl);
+      const blob = await resp.blob();
+      const objectUrl = URL.createObjectURL(blob);
+
+      // Draw to canvas at 200px
+      const thumb = await new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          const THUMB_MAX = 200;
+          let tw = img.width, th = img.height;
+          if(tw > THUMB_MAX){ th = Math.round(th * THUMB_MAX / tw); tw = THUMB_MAX; }
+          const canvas = document.createElement('canvas');
+          canvas.width = tw; canvas.height = th;
+          canvas.getContext('2d').drawImage(img, 0, 0, tw, th);
+          canvas.toBlob(b => {
+            URL.revokeObjectURL(objectUrl);
+            resolve(b);
+          }, 'image/jpeg', 0.25);
+        };
+        img.onerror = reject;
+        img.src = objectUrl;
+      });
+
+      // Upload thumbnail
+      const tname    = (d.fileName || `img_${d.id}`).replace('.jpg','') + '_thumb.jpg';
+      const thumbRef = storage.ref(`patients/${currentPtId}/images/thumbs/${tname}`);
+      await thumbRef.put(thumb, { contentType:'image/jpeg', cacheControl:'public, max-age=31536000' });
+      const thumbUrl = await thumbRef.getDownloadURL();
+
+      // Update Firestore record
+      await db.collection('patients').doc(currentPtId).collection('images').doc(d.id).update({
+        thumbnailUrl: thumbUrl,
+        thumbSizeKB: Math.round(thumb.size / 1024)
+      });
+
+      done++;
+    }catch(err){
+      console.warn('Migration failed for', d.id, err);
+    }
+  }
+
+  btn.textContent = '⚡ Fix old images';
+  btn.disabled = false;
+  alert(`✅ Migration complete! ${done}/${legacy.length} thumbnails generated.`);
+  loadPtImages(); // Reload to show updated images
+}
+
 
 let lightboxDocId = null;
 function openLightbox(docId){
