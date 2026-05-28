@@ -780,6 +780,20 @@ tbody tr:hover{background:#f8fafc}
                     <p id="imgPreviewMeta" style="font-size:11px;color:var(--muted);margin-top:4px"></p>
                   </div>
                   <button class="btn btn-primary btn-block" id="imgUploadBtn" onclick="uploadCapturedImg()" disabled style="opacity:.5">💾 Save to Patient</button>
+                  <!-- Upload progress panel — hidden until upload starts -->
+                  <div id="uploadProgressPanel" style="display:none;margin-top:10px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                      <span id="uploadStatusLabel" style="font-size:12px;font-weight:600;color:var(--navy)">Uploading…</span>
+                      <span id="uploadPctLabel" style="font-size:12px;color:var(--teal);font-weight:700">0%</span>
+                    </div>
+                    <div style="background:#e8e8e8;border-radius:99px;height:8px;overflow:hidden">
+                      <div id="uploadProgressBar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--teal),#00c8b4);border-radius:99px;transition:width .3s ease"></div>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;margin-top:6px">
+                      <span id="uploadBytesLabel" style="font-size:10px;color:var(--muted)"></span>
+                      <span id="uploadTimeLabel" style="font-size:10px;color:var(--muted)"></span>
+                    </div>
+                  </div>
                 </div>
               </div>
               <!-- Gallery -->
@@ -2605,7 +2619,32 @@ async function uploadCapturedImg(){
   const spec = document.getElementById('imgSpec').value;
   const desc = document.getElementById('imgDesc').value;
   const btn  = document.getElementById('imgUploadBtn');
+
+  // Show progress panel
+  const panel    = document.getElementById('uploadProgressPanel');
+  const bar      = document.getElementById('uploadProgressBar');
+  const pctLbl   = document.getElementById('uploadPctLabel');
+  const statusLbl= document.getElementById('uploadStatusLabel');
+  const bytesLbl = document.getElementById('uploadBytesLabel');
+  const timeLbl  = document.getElementById('uploadTimeLabel');
+
+  function showProgress(pct, status, bytesDone, bytesTotal, secLeft){
+    panel.style.display = 'block';
+    bar.style.width = pct + '%';
+    pctLbl.textContent = pct + '%';
+    statusLbl.textContent = status;
+    if(bytesDone !== undefined && bytesTotal !== undefined){
+      bytesLbl.textContent = `${Math.round(bytesDone/1024)} KB / ${Math.round(bytesTotal/1024)} KB`;
+    }
+    if(secLeft !== undefined && secLeft > 0){
+      timeLbl.textContent = secLeft < 60 ? `~${secLeft}s left` : `~${Math.round(secLeft/60)}m left`;
+    } else {
+      timeLbl.textContent = '';
+    }
+  }
+
   btn.disabled = true;
+  btn.textContent = '⏳ Uploading…';
 
   try{
     const ts    = Date.now();
@@ -2613,52 +2652,69 @@ async function uploadCapturedImg(){
     const tname = `${cat}_${spec}_${ts}_thumb.jpg`;
     const storageMeta = { contentType:'image/jpeg', cacheControl:'public, max-age=31536000' };
 
-    // Step 1: Upload thumbnail first — tiny, nearly instant
-    btn.textContent = '⏳ Thumb…';
+    // Step 1: Upload thumbnail (tiny, fast — shows 0→10%)
+    showProgress(0, '📤 Preparing thumbnail…', 0, capturedThumbBlob.size);
     const thumbRef = storage.ref(`patients/${currentPtId}/images/thumbs/${tname}`);
     await thumbRef.put(capturedThumbBlob, storageMeta);
     const thumbUrl = await thumbRef.getDownloadURL();
+    showProgress(10, '✅ Thumbnail done — uploading full image…');
 
-    // Step 2: Upload full image with progress bar
+    // Step 2: Upload full image with real-time progress + time remaining
     const fullRef    = storage.ref(`patients/${currentPtId}/images/${fname}`);
     const uploadTask = fullRef.put(capturedImgBlob, storageMeta);
+    const uploadStart = Date.now();
 
     await new Promise((resolve, reject) => {
       uploadTask.on('state_changed',
-        snap => { btn.textContent = `⏳ ${Math.round((snap.bytesTransferred/snap.totalBytes)*100)}%`; },
+        snap => {
+          const pct      = Math.round((snap.bytesTransferred / snap.totalBytes) * 90); // 10–100%
+          const elapsed  = (Date.now() - uploadStart) / 1000;
+          const rate     = snap.bytesTransferred / elapsed;   // bytes/sec
+          const remaining= (snap.totalBytes - snap.bytesTransferred) / (rate || 1);
+          const secLeft  = Math.round(remaining);
+          const speedKB  = Math.round(rate / 1024);
+          showProgress(
+            10 + pct,
+            `📡 Uploading… ${speedKB} KB/s`,
+            snap.bytesTransferred,
+            snap.totalBytes,
+            secLeft
+          );
+        },
         reject,
         resolve
       );
     });
 
+    showProgress(100, '💾 Saving to patient record…');
     const fullUrl = await uploadTask.snapshot.ref.getDownloadURL();
 
     // Step 3: Save both URLs to Firestore
     await db.collection('patients').doc(currentPtId).collection('images').add({
-      storageUrl:   fullUrl,   // full image — lightbox only
-      thumbnailUrl: thumbUrl,  // tiny thumbnail — gallery grid
-      category: cat,
-      spec: spec,
-      description: desc,
-      fileName: fname,
+      storageUrl:   fullUrl,
+      thumbnailUrl: thumbUrl,
+      category: cat, spec: spec, description: desc, fileName: fname,
       sizeKB:      Math.round(capturedImgBlob.size / 1024),
       thumbSizeKB: Math.round(capturedThumbBlob.size / 1024),
       timestamp: new Date()
     });
 
-    // Success cleanup
+    // Success
     capturedImgBlob   = null;
     capturedThumbBlob = null;
     document.getElementById('imgPreviewWrap').style.display = 'none';
     document.getElementById('imgDesc').value = '';
+    panel.style.display = 'none';
     btn.textContent = '💾 Save to Patient';
     btn.disabled = true;
     btn.style.opacity = '.5';
     loadPtImages();
-    alert('✅ Image uploaded successfully!');
+    alert('✅ Image saved successfully!');
 
   }catch(er){
     console.error('Upload error:', er);
+    const panel2 = document.getElementById('uploadProgressPanel');
+    if(panel2) panel2.style.display = 'none';
     alert('Upload error: ' + er.message);
     btn.textContent = '💾 Save to Patient';
     btn.disabled = false;
