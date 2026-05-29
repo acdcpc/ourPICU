@@ -814,7 +814,7 @@ tbody tr:hover{background:#f8fafc}
               <img id="lightboxImg" style="max-width:96vw;max-height:80vh;border-radius:12px;object-fit:contain;-webkit-touch-callout:default">
               <div id="lightboxCaption" style="color:#fff;margin-top:12px;font-size:13px;text-align:center;padding:0 20px"></div>
               <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;justify-content:center">
-                <button id="lightboxSave" style="background:#2ecc71;color:#fff;border:none;padding:8px 22px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">⬇ Save to Device</button>
+                <button id="lightboxSave" onclick="saveLightboxImg()" style="background:#2ecc71;color:#fff;border:none;padding:8px 22px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">⬇ Save to Device</button>
                 <button id="lightboxDelete" style="background:var(--danger);color:#fff;border:none;padding:8px 22px;border-radius:8px;cursor:pointer;font-size:13px">🗑 Delete Image</button>
               </div>
               <div id="lightboxSaveHint" style="color:#aaa;font-size:11px;margin-top:8px;text-align:center;display:none">
@@ -2905,50 +2905,60 @@ function openLightbox(docId){
 async function saveLightboxImg(){
   const btn  = document.getElementById('lightboxSave');
   const hint = document.getElementById('lightboxSaveHint');
-  if(!btn || !btn._url) return;
+  if(!btn) return;
+
+  // Get URL directly from the visible lightbox image — always available
+  const lbImg = document.getElementById('lightboxImg');
+  const url   = (btn._url) || lbImg.src;
+  const fname = (btn._fname) || 'picu_image.jpg';
 
   const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
-  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
-  // ── iPhone / Safari: fetch+<a download> is blocked by browser ──
-  // Best UX: make image long-pressable and show the hint immediately
-  if(isIOS || isSafari){
+  // ── iPhone: Safari blocks all programmatic downloads ──
+  // Only reliable method is long-press on the image
+  if(isIOS){
+    hint.innerHTML = '👆 Long-press the image above → tap <strong>Save to Photos</strong>';
     hint.style.display = 'block';
-    // Make the lightbox image itself easy to long-press save
-    const lbImg = document.getElementById('lightboxImg');
-    lbImg.style.webkitTouchCallout = 'default'; // re-enable iOS context menu on image
-    btn.textContent = '📱 Long-press image to save';
-    setTimeout(() => { btn.textContent = '⬇ Save to Device'; }, 4000);
+    btn.textContent = '👆 Long-press image above';
+    setTimeout(() => { btn.textContent = '⬇ Save to Device'; }, 5000);
     return;
   }
 
-  // ── Mac / Android / Chrome: blob download works fine ──
+  // ── Mac / Android / Chrome / Firefox ──
+  // Open in new tab — user can right-click Save As, OR try blob download
   const origText = btn.textContent;
-  btn.textContent = '⏳ Fetching…';
+  btn.textContent = '⏳ Saving…';
   btn.disabled = true;
+
   try{
-    const resp = await fetch(btn._url, { mode: 'cors' });
-    if(!resp.ok) throw new Error('Network response was not ok');
+    // Try blob download first (works on Chrome/Android when CORS allows)
+    const resp = await fetch(url);
     const blob = await resp.blob();
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href     = url;
-    a.download = btn._fname;
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = fname;
+    a.style.display = 'none';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 3000);
-    btn.textContent = '✅ Saved to Downloads!';
-    setTimeout(() => { btn.textContent = origText; btn.disabled = false; }, 3000);
-  }catch(er){
-    // CORS blocked — fall back to opening image in new tab (user can Save As)
-    btn.textContent = origText;
-    btn.disabled = false;
-    hint.textContent = '⚠ Auto-download blocked — opening image in new tab. Use Save As (right-click).';
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 3000);
+    btn.textContent = '✅ Saved!';
+    hint.textContent = '✅ Check your Downloads folder';
     hint.style.display = 'block';
-    window.open(btn._url, '_blank');
-    setTimeout(() => { hint.style.display = 'none'; hint.textContent = '📱 iPhone: tap & hold the image → Save to Photos'; }, 6000);
+  }catch(e){
+    // CORS blocked — open in new tab so user can Save As
+    window.open(url, '_blank');
+    hint.innerHTML = '🖥 Image opened in new tab — right-click → <strong>Save Image As</strong>';
+    hint.style.display = 'block';
+    btn.textContent = origText;
   }
+
+  btn.disabled = false;
+  setTimeout(() => {
+    btn.textContent = origText;
+    hint.style.display = 'none';
+  }, 6000);
 }
 
 function closeLightbox(){
@@ -2974,8 +2984,7 @@ async function deleteLightboxImg(){
 document.addEventListener('DOMContentLoaded',()=>{
   const delBtn = document.getElementById('lightboxDelete');
   if(delBtn) delBtn.onclick = deleteLightboxImg;
-  const saveBtn = document.getElementById('lightboxSave');
-  if(saveBtn) saveBtn.onclick = saveLightboxImg;
+  // saveBtn wired inline via onclick attribute
 });
 
 // ═══════════════════════════════════════════
