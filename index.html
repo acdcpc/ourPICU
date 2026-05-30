@@ -2637,78 +2637,60 @@ async function uploadCapturedImg(){
   }
 
   btn.disabled = true;
-  btn.textContent = '⏳ Uploading…';
+  btn.textContent = '⏳ Saving…';
 
   try{
     const ts    = Date.now();
     const fname = `${cat}_${spec}_${ts}.jpg`;
-    const tname = `${cat}_${spec}_${ts}_thumb.jpg`;
-    const storageMeta = { contentType:'image/jpeg', cacheControl:'public, max-age=31536000' };
 
-    // Step 1: Upload thumbnail (tiny, fast — shows 0→10%)
-    showProgress(0, '📤 Preparing thumbnail…', 0, capturedThumbBlob.size);
-    const thumbRef = storage.ref(`patients/${currentPtId}/images/thumbs/${tname}`);
-    await thumbRef.put(capturedThumbBlob, storageMeta);
-    const thumbUrl = await thumbRef.getDownloadURL();
-    showProgress(10, '✅ Thumbnail done — uploading full image…');
+    showProgress(0, '🖼 Converting image…', 0, capturedImgBlob.size);
 
-    // Step 2: Upload full image with real-time progress + time remaining
-    const fullRef    = storage.ref(`patients/${currentPtId}/images/${fname}`);
-    const uploadTask = fullRef.put(capturedImgBlob, storageMeta);
-    const uploadStart = Date.now();
+    // Convert blobs to base64 — stored directly in Firestore, no Firebase Storage needed
+    function blobToBase64(blob){
+      return new Promise((res, rej) => {
+        const reader = new FileReader();
+        reader.onload  = () => res(reader.result);
+        reader.onerror = rej;
+        reader.readAsDataURL(blob);
+      });
+    }
 
-    await new Promise((resolve, reject) => {
-      uploadTask.on('state_changed',
-        snap => {
-          const pct      = Math.round((snap.bytesTransferred / snap.totalBytes) * 90); // 10–100%
-          const elapsed  = (Date.now() - uploadStart) / 1000;
-          const rate     = snap.bytesTransferred / elapsed;   // bytes/sec
-          const remaining= (snap.totalBytes - snap.bytesTransferred) / (rate || 1);
-          const secLeft  = Math.round(remaining);
-          const speedKB  = Math.round(rate / 1024);
-          showProgress(
-            10 + pct,
-            `📡 Uploading… ${speedKB} KB/s`,
-            snap.bytesTransferred,
-            snap.totalBytes,
-            secLeft
-          );
-        },
-        reject,
-        resolve
-      );
-    });
+    showProgress(30, '📦 Preparing full image…');
+    const fullDataUrl  = await blobToBase64(capturedImgBlob);
 
-    showProgress(100, '💾 Saving to patient record…');
-    const fullUrl = await uploadTask.snapshot.ref.getDownloadURL();
+    showProgress(60, '📦 Preparing thumbnail…');
+    const thumbDataUrl = await blobToBase64(capturedThumbBlob);
 
-    // Step 3: Save URLs to Firestore
+    showProgress(85, '💾 Saving to patient record…');
+
+    // Save everything to Firestore — images are 7-21KB compressed, well within 1MB limit
     await db.collection('patients').doc(currentPtId).collection('images').add({
-      storageUrl:   fullUrl,
-      thumbnailUrl: thumbUrl,
+      storageUrl:   fullDataUrl,   // base64 data URL — no Firebase Storage
+      thumbnailUrl: thumbDataUrl,  // base64 thumbnail
       category: cat, spec: spec, description: desc, fileName: fname,
       sizeKB:      Math.round(capturedImgBlob.size / 1024),
       thumbSizeKB: Math.round(capturedThumbBlob.size / 1024),
       timestamp: new Date()
     });
 
+    showProgress(100, '✅ Saved!');
+
     // Success
     capturedImgBlob   = null;
     capturedThumbBlob = null;
     document.getElementById('imgPreviewWrap').style.display = 'none';
     document.getElementById('imgDesc').value = '';
-    panel.style.display = 'none';
+    setTimeout(() => { panel.style.display = 'none'; }, 800);
     btn.textContent = '💾 Save to Patient';
     btn.disabled = true;
     btn.style.opacity = '.5';
     loadPtImages();
-    alert('✅ Image saved successfully!');
 
   }catch(er){
-    console.error('Upload error:', er);
+    console.error('Save error:', er);
     const panel2 = document.getElementById('uploadProgressPanel');
     if(panel2) panel2.style.display = 'none';
-    alert('Upload error: ' + er.message);
+    alert('Save error: ' + er.message);
     btn.textContent = '💾 Save to Patient';
     btn.disabled = false;
     btn.style.opacity = '1';
@@ -2900,17 +2882,23 @@ async function saveLightboxImg(){
   const fname = (btn._fname) || 'picu_image.jpg';
   const origText = btn.textContent;
 
-  // ── Get blob from the already-loaded <img> via canvas — no network, no CORS ──
+  // ── Get blob from stored base64 dataURL — instant, no network, no CORS ──
   async function getBlob(){
-    if(lightboxBlob) return lightboxBlob;  // pre-cached
+    if(lightboxBlob) return lightboxBlob;
+    const d = allImgDocs.find(x => x.id === lightboxDocId);
+    const dataUrl = (d && d.storageUrl && d.storageUrl.startsWith('data:')) ? d.storageUrl : null;
+    if(dataUrl){
+      const res = await fetch(dataUrl);
+      return await res.blob();
+    }
+    // Fallback: draw from visible <img> via canvas
     return new Promise((resolve, reject) => {
       const img = document.getElementById('lightboxImg');
       if(!img.complete || !img.naturalWidth){ reject(new Error('Image not loaded')); return; }
       const canvas = document.createElement('canvas');
-      canvas.width  = img.naturalWidth;
-      canvas.height = img.naturalHeight;
+      canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
       canvas.getContext('2d').drawImage(img, 0, 0);
-      canvas.toBlob(b => b ? resolve(b) : reject(new Error('Canvas toBlob failed')), 'image/jpeg', 0.92);
+      canvas.toBlob(b => b ? resolve(b) : reject(new Error('Canvas failed')), 'image/jpeg', 0.92);
     });
   }
 
@@ -4266,11 +4254,12 @@ window.addEventListener('beforeinstallprompt', e=>{
   <button onclick="closeLightbox()" style="position:absolute;top:16px;right:20px;background:none;border:none;color:#fff;font-size:2rem;cursor:pointer;z-index:1">✕</button>
   <img id="lightboxImg" style="max-width:96vw;max-height:72vh;border-radius:12px;object-fit:contain;-webkit-touch-callout:default">
   <div id="lightboxCaption" style="color:#fff;margin-top:12px;font-size:13px;text-align:center;padding:0 20px"></div>
-  <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;justify-content:center">
-    <button id="lightboxSave" onclick="saveLightboxImg()" style="background:#2ecc71;color:#fff;border:none;padding:10px 28px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:700">⬇ Save to Device</button>
+  <div style="margin-top:12px;text-align:center">
     <button id="lightboxDelete" style="background:var(--danger);color:#fff;border:none;padding:10px 22px;border-radius:8px;cursor:pointer;font-size:13px">🗑 Delete Image</button>
   </div>
-  <div id="lightboxSaveHint" style="color:#aaa;font-size:11px;margin-top:8px;text-align:center;display:none"></div>
+  <div style="color:rgba(255,255,255,.5);font-size:12px;margin-top:12px;text-align:center;padding:0 20px">
+    📱 Long-press image to save to Photos
+  </div>
 </div>
 
 </body>
