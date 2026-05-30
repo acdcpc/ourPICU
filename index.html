@@ -817,9 +817,7 @@ tbody tr:hover{background:#f8fafc}
                 <button id="lightboxSave" onclick="saveLightboxImg()" style="background:#2ecc71;color:#fff;border:none;padding:8px 22px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">⬇ Save to Device</button>
                 <button id="lightboxDelete" style="background:var(--danger);color:#fff;border:none;padding:8px 22px;border-radius:8px;cursor:pointer;font-size:13px">🗑 Delete Image</button>
               </div>
-              <div id="lightboxSaveHint" style="color:#aaa;font-size:11px;margin-top:8px;text-align:center;display:none">
-                📱 iPhone: tap &amp; hold the image → <strong>Save to Photos</strong>
-              </div>
+              <div id="lightboxSaveHint" style="color:#aaa;font-size:11px;margin-top:8px;text-align:center;display:none"></div>
             </div>
           </div>
 
@@ -2695,10 +2693,19 @@ async function uploadCapturedImg(){
     showProgress(100, '💾 Saving to patient record…');
     const fullUrl = await uploadTask.snapshot.ref.getDownloadURL();
 
-    // Step 3: Save both URLs to Firestore
+    // Convert full blob to base64 data URL — stored in Firestore so
+    // Save-to-Device never needs a network fetch (bypasses CORS entirely)
+    const dataUrl = await new Promise(res => {
+      const reader = new FileReader();
+      reader.onload = () => res(reader.result);
+      reader.readAsDataURL(capturedImgBlob);
+    });
+
+    // Step 3: Save both URLs + inline data URL to Firestore
     await db.collection('patients').doc(currentPtId).collection('images').add({
       storageUrl:   fullUrl,
       thumbnailUrl: thumbUrl,
+      dataUrl:      dataUrl,   // base64 — used by Save to Device (no CORS)
       category: cat, spec: spec, description: desc, fileName: fname,
       sizeKB:      Math.round(capturedImgBlob.size / 1024),
       thumbSizeKB: Math.round(capturedThumbBlob.size / 1024),
@@ -2907,33 +2914,42 @@ async function saveLightboxImg(){
   const hint = document.getElementById('lightboxSaveHint');
   if(!btn) return;
 
-  // Get URL directly from the visible lightbox image — always available
-  const lbImg = document.getElementById('lightboxImg');
-  const url   = (btn._url) || lbImg.src;
   const fname = (btn._fname) || 'picu_image.jpg';
+  const origText = btn.textContent;
 
-  const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
-
-  // ── iPhone: Safari blocks all programmatic downloads ──
-  // Only reliable method is long-press on the image
-  if(isIOS){
-    hint.innerHTML = '👆 Long-press the image above → tap <strong>Save to Photos</strong>';
-    hint.style.display = 'block';
-    btn.textContent = '👆 Long-press image above';
-    setTimeout(() => { btn.textContent = '⬇ Save to Device'; }, 5000);
-    return;
+  // ── Get blob: prefer stored dataUrl (no CORS), fall back to storageUrl ──
+  async function getBlob(){
+    const d = allImgDocs.find(x => x.id === lightboxDocId);
+    if(d && d.dataUrl){
+      // dataUrl is a base64 string stored in Firestore — fetch() on a data: URL is instant, no network
+      const res = await fetch(d.dataUrl);
+      return await res.blob();
+    }
+    // Older images without dataUrl — try Firebase storage URL (may hit CORS)
+    const res = await fetch(btn._url || document.getElementById('lightboxImg').src);
+    return await res.blob();
   }
 
-  // ── Mac / Android / Chrome / Firefox ──
-  // Open in new tab — user can right-click Save As, OR try blob download
-  const origText = btn.textContent;
   btn.textContent = '⏳ Saving…';
   btn.disabled = true;
+  hint.style.display = 'none';
 
   try{
-    // Try blob download first (works on Chrome/Android when CORS allows)
-    const resp = await fetch(url);
-    const blob = await resp.blob();
+    const blob = await getBlob();
+
+    // ── Web Share API — pops native OS share sheet ──
+    // iPhone: user picks "Save to Photos" or Files
+    // Android: user picks gallery / drive
+    // Desktop Chrome/Edge: also supported
+    if(navigator.share && navigator.canShare && navigator.canShare({ files: [new File([blob], fname, { type: 'image/jpeg' })] })){
+      const file = new File([blob], fname, { type: 'image/jpeg' });
+      await navigator.share({ files: [file], title: fname });
+      btn.textContent = '✅ Shared!';
+      setTimeout(() => { btn.textContent = origText; btn.disabled = false; }, 3000);
+      return;
+    }
+
+    // ── Desktop fallback: direct blob download to Downloads folder ──
     const blobUrl = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = blobUrl;
@@ -2946,17 +2962,21 @@ async function saveLightboxImg(){
     btn.textContent = '✅ Saved!';
     hint.textContent = '✅ Check your Downloads folder';
     hint.style.display = 'block';
+
   }catch(e){
-    // CORS blocked — open in new tab so user can Save As
-    window.open(url, '_blank');
-    hint.innerHTML = '🖥 Image opened in new tab — right-click → <strong>Save Image As</strong>';
-    hint.style.display = 'block';
-    btn.textContent = origText;
+    if(e.name === 'AbortError'){
+      // User cancelled the share sheet — not an error
+      btn.textContent = origText;
+    } else {
+      hint.innerHTML = '⚠️ Could not save — try long-pressing the image above';
+      hint.style.display = 'block';
+      btn.textContent = origText;
+    }
   }
 
   btn.disabled = false;
   setTimeout(() => {
-    btn.textContent = origText;
+    if(btn.textContent !== origText) btn.textContent = origText;
     hint.style.display = 'none';
   }, 6000);
 }
