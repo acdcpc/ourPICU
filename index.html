@@ -2682,19 +2682,10 @@ async function uploadCapturedImg(){
     showProgress(100, '💾 Saving to patient record…');
     const fullUrl = await uploadTask.snapshot.ref.getDownloadURL();
 
-    // Convert full blob to base64 data URL — stored in Firestore so
-    // Save-to-Device never needs a network fetch (bypasses CORS entirely)
-    const dataUrl = await new Promise(res => {
-      const reader = new FileReader();
-      reader.onload = () => res(reader.result);
-      reader.readAsDataURL(capturedImgBlob);
-    });
-
-    // Step 3: Save both URLs + inline data URL to Firestore
+    // Step 3: Save URLs to Firestore
     await db.collection('patients').doc(currentPtId).collection('images').add({
       storageUrl:   fullUrl,
       thumbnailUrl: thumbUrl,
-      dataUrl:      dataUrl,   // base64 — used by Save to Device (no CORS)
       category: cat, spec: spec, description: desc, fileName: fname,
       sizeKB:      Math.round(capturedImgBlob.size / 1024),
       thumbSizeKB: Math.round(capturedThumbBlob.size / 1024),
@@ -2899,10 +2890,6 @@ function openLightbox(docId){
   }
   document.getElementById('lightboxSaveHint').style.display = 'none';
 
-  // Pre-fetch blob in background while user views image — so Save is instant
-  if(d.dataUrl){
-    fetch(d.dataUrl).then(r=>r.blob()).then(b=>{ lightboxBlob=b; }).catch(()=>{});
-  }
 }
 
 async function saveLightboxImg(){
@@ -2913,17 +2900,18 @@ async function saveLightboxImg(){
   const fname = (btn._fname) || 'picu_image.jpg';
   const origText = btn.textContent;
 
-  // ── Get blob: use pre-cached blob if ready, else dataUrl, else Firebase URL ──
+  // ── Get blob from the already-loaded <img> via canvas — no network, no CORS ──
   async function getBlob(){
-    if(lightboxBlob) return lightboxBlob;  // already fetched in background — instant
-    const d = allImgDocs.find(x => x.id === lightboxDocId);
-    if(d && d.dataUrl){
-      const res = await fetch(d.dataUrl);  // base64 data URL — no network, no CORS
-      return await res.blob();
-    }
-    // Older images without dataUrl — try Firebase storage URL (may hit CORS)
-    const res = await fetch(btn._url || document.getElementById('lightboxImg').src);
-    return await res.blob();
+    if(lightboxBlob) return lightboxBlob;  // pre-cached
+    return new Promise((resolve, reject) => {
+      const img = document.getElementById('lightboxImg');
+      if(!img.complete || !img.naturalWidth){ reject(new Error('Image not loaded')); return; }
+      const canvas = document.createElement('canvas');
+      canvas.width  = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      canvas.getContext('2d').drawImage(img, 0, 0);
+      canvas.toBlob(b => b ? resolve(b) : reject(new Error('Canvas toBlob failed')), 'image/jpeg', 0.92);
+    });
   }
 
   btn.textContent = '⏳ Saving…';
